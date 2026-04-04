@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: no_frame_works
+      PGDATA: /var/lib/postgresql/data/pgdata
+    restart: always
+    ports:
+      - "5442:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+
+  redis:
+    image: redis:8.4
+    ports:
+      - "6389:6379"
+    restart: always
+
+  kratos-migrate:
+    image: oryd/kratos:v1.3.0
+    environment:
+      - DSN=postgres://kratos:secret@db:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+    volumes:
+      - type: bind
+        source: ./kratos
+        target: /etc/config/kratos
+    command: migrate sql -e --yes
+    restart: on-failure
+    depends_on:
+      - db
+
+  kratos:
+    image: oryd/kratos:v1.3.0
+    environment:
+      - DSN=postgres://kratos:secret@db:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+    ports:
+      - "4433:4433"
+      - "4434:4434"
+    volumes:
+      - type: bind
+        source: ./kratos
+        target: /etc/config/kratos
+    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    restart: unless-stopped
+    depends_on:
+      - db
+      - kratos-migrate
+
+  mailslurper:
+    image: oryd/mailslurper:latest-smtps
+    ports:
+      - "4436:4436"
+      - "4437:4437"
+    restart: unless-stopped
+
+volumes:
+  db_data:
