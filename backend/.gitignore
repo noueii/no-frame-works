@@ -1,0 +1,11 @@
+tmp
+.env
+.env.local
+.env.test
+.swp
+__debug_bin
+coverage.out
+bin
+.DS_Store
+cover.out
+.cache
