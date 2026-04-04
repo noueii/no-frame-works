@@ -6,19 +6,35 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/noueii/no-frame-works/internal/core/actor"
+	"github.com/noueii/no-frame-works/internal/infrastructure/identity"
 )
 
-// NewActorMiddleware creates a middleware that extracts the actor from the request
-// and sets it on the context. This is a placeholder that creates a default actor —
-// replace with real JWT/session extraction.
-func NewActorMiddleware() func(next http.Handler) http.Handler {
+// NewActorMiddleware creates a middleware that validates the session via the
+// identity provider and sets the actor on the request context.
+func NewActorMiddleware(idClient identity.Client) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			// TODO: Extract real user identity from JWT/session
-			userActor := actor.UserActor{ID: uuid.Nil, Role: actor.RoleMember}
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cookie := r.Header.Get("Cookie")
+			if cookie == "" {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			detail, err := idClient.GetMeDetail(r.Context(), cookie)
+			if err != nil {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			userID, err := uuid.Parse(detail.IdentityID)
+			if err != nil {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			userActor := actor.UserActor{ID: userID, Role: actor.RoleMember}
 			ctx := actor.WithActor(r.Context(), userActor)
 			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-		return http.HandlerFunc(fn)
+		})
 	}
 }

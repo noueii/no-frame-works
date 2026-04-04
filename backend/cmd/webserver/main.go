@@ -64,7 +64,7 @@ func run() error {
 
 	// Create webserver with route registrars
 	ws := webserver.NewWebserver(a, func(r chi.Router) {
-		r.Use(middleware.NewActorMiddleware())
+		r.Use(middleware.NewActorMiddleware(a.IdentityClient()))
 
 		userhandler.RegisterRoutes(r, userHandler)
 		posthandler.RegisterRoutes(r, postHandler)
