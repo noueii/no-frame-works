@@ -18,7 +18,10 @@ func New(repo user.UserRepository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateUser(ctx context.Context, req user.CreateUserRequest) (user.UserView, error) {
+func (s *Service) CreateUser(
+	ctx context.Context,
+	req user.CreateUserRequest,
+) (user.UserView, error) {
 	return createuser.Execute(ctx, s.repo, req)
 }
 

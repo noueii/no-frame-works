@@ -1,24 +1,14 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  usePostPostsMutation,
-  useGetPostsByAuthorByAuthorIdQuery,
-} from '../services/api/api'
+import { usePostPostsMutation } from '../services/api/api'
 
 export function Home() {
   const { logout } = useAuth()
   const [createPost, { isLoading }] = usePostPostsMutation()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [authorId, setAuthorId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-
-  // Only fetch posts when authorId is set
-  const { data: posts } = useGetPostsByAuthorByAuthorIdQuery(
-    { authorId },
-    { skip: !authorId },
-  )
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,7 +17,7 @@ export function Home() {
 
     try {
       await createPost({
-        createPostRequest: { title, content, authorId },
+        createPostRequest: { title, content },
       }).unwrap()
       setTitle('')
       setContent('')
@@ -55,21 +45,6 @@ export function Home() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Create Post</h2>
 
           <form onSubmit={handleCreatePost} className="space-y-4">
-            <div>
-              <label htmlFor="authorId" className="block text-sm font-medium text-gray-700">
-                Author ID
-              </label>
-              <input
-                id="authorId"
-                type="text"
-                value={authorId}
-                onChange={(e) => setAuthorId(e.target.value)}
-                required
-                placeholder="UUID of the author"
-                className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                 Title
@@ -110,19 +85,6 @@ export function Home() {
             </button>
           </form>
         </section>
-
-        {posts && posts.length > 0 && (
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">Posts</h2>
-            {posts.map((post) => (
-              <div key={post.id} className="bg-white rounded-lg shadow p-4">
-                <h3 className="font-medium text-gray-900">{post.title}</h3>
-                <p className="text-sm text-gray-600 mt-1">{post.content}</p>
-                <p className="text-xs text-gray-400 mt-2">by {post.authorName}</p>
-              </div>
-            ))}
-          </section>
-        )}
       </main>
     </div>
   )

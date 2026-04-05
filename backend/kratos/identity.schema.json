@@ -24,14 +24,6 @@
               "via": "email"
             }
           }
-        },
-        "first_name": {
-          "type": "string",
-          "title": "First Name"
-        },
-        "last_name": {
-          "type": "string",
-          "title": "Last Name"
         }
       },
       "required": ["email"],

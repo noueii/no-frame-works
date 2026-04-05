@@ -20,14 +20,20 @@ func NewPermissionLayer(inner user.UserAPI) *PermissionLayer {
 	return &PermissionLayer{inner: inner}
 }
 
-func (p *PermissionLayer) CreateUser(ctx context.Context, req user.CreateUserRequest) (user.UserView, error) {
+func (p *PermissionLayer) CreateUser(
+	ctx context.Context,
+	req user.CreateUserRequest,
+) (user.UserView, error) {
 	if err := authorize(ctx); err != nil {
 		return user.UserView{}, err
 	}
 	return p.inner.CreateUser(ctx, req)
 }
 
-func (p *PermissionLayer) GetUser(ctx context.Context, req user.GetUserRequest) (user.UserView, error) {
+func (p *PermissionLayer) GetUser(
+	ctx context.Context,
+	req user.GetUserRequest,
+) (user.UserView, error) {
 	if err := authorize(ctx); err != nil {
 		return user.UserView{}, err
 	}

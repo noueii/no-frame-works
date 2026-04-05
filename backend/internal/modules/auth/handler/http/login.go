@@ -32,7 +32,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	flow, _, err := h.kratos.FrontendAPI.CreateNativeLoginFlow(r.Context()).Execute()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to create login flow: %v", err))
+		writeError(
+			w,
+			http.StatusInternalServerError,
+			fmt.Sprintf("failed to create login flow: %v", err),
+		)
 		return
 	}
 
@@ -49,7 +53,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		UpdateLoginFlowBody(updateBody).
 		Execute()
 	if err != nil {
-		if resp != nil && (resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized) {
+		if resp != nil &&
+			(resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized) {
 			writeError(w, http.StatusUnauthorized, "invalid credentials")
 			return
 		}

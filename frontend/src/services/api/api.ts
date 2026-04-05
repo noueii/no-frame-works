@@ -113,8 +113,6 @@ export type LoginRequest = {
 export type RegisterRequest = {
   email: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
 };
 export type User = {
   id: string;
@@ -135,7 +133,6 @@ export type Post = {
 export type CreatePostRequest = {
   title: string;
   content: string;
-  authorId: string;
 };
 export const {
   usePostAuthLoginMutation,

@@ -1,0 +1,123 @@
+openapi: 3.0.0
+info:
+  title: No Frame Works API
+  version: '1.0'
+  description: API spec for the no-frame-works backend
+  contact:
+    name: noueii
+servers:
+  - url: http://localhost:8110
+paths:
+  /users:
+    post:
+      operationId: create-user
+      summary: Create User
+      description: Creates a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../shared.yaml#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '../shared.yaml#/components/schemas/User'
+        '400':
+          $ref: '../shared.yaml#/components/responses/Error400'
+        '500':
+          $ref: '../shared.yaml#/components/responses/Error500'
+  /users/{id}:
+    get:
+      operationId: get-user
+      summary: Get User
+      description: Gets a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '../shared.yaml#/components/schemas/User'
+        '404':
+          $ref: '../shared.yaml#/components/responses/Error404'
+        '500':
+          $ref: '../shared.yaml#/components/responses/Error500'
+  /posts:
+    post:
+      operationId: create-post
+      summary: Create Post
+      description: Creates a new post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../shared.yaml#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '../shared.yaml#/components/schemas/Post'
+        '400':
+          $ref: '../shared.yaml#/components/responses/Error400'
+        '500':
+          $ref: '../shared.yaml#/components/responses/Error500'
+  /posts/{id}:
+    get:
+      operationId: get-post
+      summary: Get Post
+      description: Gets a post by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post found
+          content:
+            application/json:
+              schema:
+                $ref: '../shared.yaml#/components/schemas/Post'
+        '404':
+          $ref: '../shared.yaml#/components/responses/Error404'
+        '500':
+          $ref: '../shared.yaml#/components/responses/Error500'
+  /posts/by-author/{authorId}:
+    get:
+      operationId: list-posts-by-author
+      summary: List Posts by Author
+      description: Lists all posts by a given author
+      parameters:
+        - name: authorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Posts found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../shared.yaml#/components/schemas/Post'
+        '500':
+          $ref: '../shared.yaml#/components/responses/Error500'

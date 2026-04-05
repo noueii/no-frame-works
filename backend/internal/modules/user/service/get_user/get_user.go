@@ -8,7 +8,11 @@ import (
 )
 
 // Execute retrieves a user by ID.
-func Execute(ctx context.Context, repo user.UserRepository, req user.GetUserRequest) (user.UserView, error) {
+func Execute(
+	ctx context.Context,
+	repo user.UserRepository,
+	req user.GetUserRequest,
+) (user.UserView, error) {
 	if err := req.Validate(); err != nil {
 		return user.UserView{}, fmt.Errorf("validation failed: %w", err)
 	}

@@ -7,7 +7,10 @@ import (
 	"github.com/noueii/no-frame-works/internal/modules/post/domain"
 )
 
-func (r *PostgresPostRepository) ListByAuthor(ctx context.Context, authorID string) ([]domain.Post, error) {
+func (r *PostgresPostRepository) ListByAuthor(
+	ctx context.Context,
+	authorID string,
+) ([]domain.Post, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
 		`SELECT id, title, content, author_id, created_at, updated_at FROM "post" WHERE author_id = $1 ORDER BY created_at DESC`,

@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/noueii/no-frame-works/internal/modules/post"
-	"github.com/noueii/no-frame-works/internal/modules/user"
 	createpost "github.com/noueii/no-frame-works/internal/modules/post/service/create_post"
 	getpost "github.com/noueii/no-frame-works/internal/modules/post/service/get_post"
 	listposts "github.com/noueii/no-frame-works/internal/modules/post/service/list_posts"
+	"github.com/noueii/no-frame-works/internal/modules/user"
 )
 
 // Service implements post.PostAPI.
@@ -24,7 +24,10 @@ func New(repo post.PostRepository, userAPI user.UserAPI) *Service {
 	}
 }
 
-func (s *Service) CreatePost(ctx context.Context, req post.CreatePostRequest) (post.PostView, error) {
+func (s *Service) CreatePost(
+	ctx context.Context,
+	req post.CreatePostRequest,
+) (post.PostView, error) {
 	return createpost.Execute(ctx, s.repo, s.userAPI, req)
 }
 
@@ -32,6 +35,9 @@ func (s *Service) GetPost(ctx context.Context, req post.GetPostRequest) (post.Po
 	return getpost.Execute(ctx, s.repo, s.userAPI, req)
 }
 
-func (s *Service) ListPosts(ctx context.Context, req post.ListPostsRequest) ([]post.PostView, error) {
+func (s *Service) ListPosts(
+	ctx context.Context,
+	req post.ListPostsRequest,
+) ([]post.PostView, error) {
 	return listposts.Execute(ctx, s.repo, s.userAPI, req)
 }

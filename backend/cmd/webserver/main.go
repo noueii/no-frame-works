@@ -75,11 +75,13 @@ func run() error {
 		func(r chi.Router) {
 			authhandler.RegisterRoutes(r, authHandler)
 		},
-		// Authenticated routes
+		// Authenticated routes (grouped so middleware doesn't conflict with public routes)
 		func(r chi.Router) {
-			r.Use(middleware.NewActorMiddleware(a.IdentityClient()))
-			userhandler.RegisterRoutes(r, userHandler)
-			posthandler.RegisterRoutes(r, postHandler)
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.NewActorMiddleware(a.IdentityClient()))
+				userhandler.RegisterRoutes(r, userHandler)
+				posthandler.RegisterRoutes(r, postHandler)
+			})
 		},
 	)
 

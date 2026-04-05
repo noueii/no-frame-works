@@ -3,16 +3,16 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
 
 	ory "github.com/ory/kratos-client-go"
 )
 
 type registerRequest struct {
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	FirstName string `json:"firstName,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type registerResponse struct {
@@ -34,18 +34,16 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	flow, _, err := h.kratos.FrontendAPI.CreateNativeRegistrationFlow(r.Context()).Execute()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to create registration flow: %v", err))
+		writeError(
+			w,
+			http.StatusInternalServerError,
+			fmt.Sprintf("failed to create registration flow: %v", err),
+		)
 		return
 	}
 
 	traits := map[string]interface{}{
 		"email": body.Email,
-	}
-	if body.FirstName != "" {
-		traits["first_name"] = body.FirstName
-	}
-	if body.LastName != "" {
-		traits["last_name"] = body.LastName
 	}
 
 	updateBody := ory.UpdateRegistrationFlowBody{
@@ -61,8 +59,16 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		UpdateRegistrationFlowBody(updateBody).
 		Execute()
 	if err != nil {
+		if resp != nil && resp.Body != nil {
+			body, _ := io.ReadAll(resp.Body)
+			slog.Default().Error("kratos registration error", "status", resp.StatusCode, "body", string(body))
+		}
 		if resp != nil && resp.StatusCode == http.StatusBadRequest {
-			writeError(w, http.StatusBadRequest, "registration failed — check email/password requirements")
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"registration failed — check email/password requirements",
+			)
 			return
 		}
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("registration failed: %v", err))

@@ -10,7 +10,11 @@ import (
 )
 
 func (r *PostgresUserRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
-	row := r.db.QueryRowContext(ctx, `SELECT id, name, email, created_at, updated_at FROM "user" WHERE id = $1`, id)
+	row := r.db.QueryRowContext(
+		ctx,
+		`SELECT id, name, email, created_at, updated_at FROM "user" WHERE id = $1`,
+		id,
+	)
 
 	var u domain.User
 	err := row.Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.UpdatedAt)

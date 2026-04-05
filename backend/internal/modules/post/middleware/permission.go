@@ -23,21 +23,30 @@ func NewPermissionLayer(inner post.PostAPI) *PermissionLayer {
 	return &PermissionLayer{inner: inner}
 }
 
-func (p *PermissionLayer) CreatePost(ctx context.Context, req post.CreatePostRequest) (post.PostView, error) {
+func (p *PermissionLayer) CreatePost(
+	ctx context.Context,
+	req post.CreatePostRequest,
+) (post.PostView, error) {
 	if err := authorizeAdminOrSystem(ctx); err != nil {
 		return post.PostView{}, err
 	}
 	return p.inner.CreatePost(ctx, req)
 }
 
-func (p *PermissionLayer) GetPost(ctx context.Context, req post.GetPostRequest) (post.PostView, error) {
+func (p *PermissionLayer) GetPost(
+	ctx context.Context,
+	req post.GetPostRequest,
+) (post.PostView, error) {
 	if err := authorize(ctx); err != nil {
 		return post.PostView{}, err
 	}
 	return p.inner.GetPost(ctx, req)
 }
 
-func (p *PermissionLayer) ListPosts(ctx context.Context, req post.ListPostsRequest) ([]post.PostView, error) {
+func (p *PermissionLayer) ListPosts(
+	ctx context.Context,
+	req post.ListPostsRequest,
+) ([]post.PostView, error) {
 	if err := authorize(ctx); err != nil {
 		return nil, err
 	}

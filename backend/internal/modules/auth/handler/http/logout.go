@@ -22,7 +22,11 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.kratos.IdentityAPI.DisableSession(r.Context(), session.GetId()).Execute()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to revoke session: %v", err))
+		writeError(
+			w,
+			http.StatusInternalServerError,
+			fmt.Sprintf("failed to revoke session: %v", err),
+		)
 		return
 	}
 

@@ -51,7 +51,17 @@ init-db: ## Initializes postgres in docker and runs existing migrations
 	@(cd $(SERVER_DIR) && docker-compose up -d)
 	@echo "✓ Docker environment started."
 	@echo
-	@echo ">> [2/5] Creating databases: local and test"
+	@echo ">> [2/6] Creating Kratos database user and database..."
+	@(cd $(SERVER_DIR) && \
+		docker-compose exec db psql -U postgres -c "DO \$$\$$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'kratos') THEN CREATE USER kratos WITH PASSWORD 'secret'; END IF; END \$$\$$;" && \
+		docker-compose exec db psql -U postgres -c "SELECT 'CREATE DATABASE kratos OWNER kratos' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'kratos')\gexec")
+	@echo "✓ Kratos database ready."
+	@echo
+	@echo ">> [3/6] Restarting Kratos to run migrations..."
+	@(cd $(SERVER_DIR) && docker-compose restart kratos-migrate kratos)
+	@echo "✓ Kratos restarted."
+	@echo
+	@echo ">> [4/6] Creating databases: local and test"
 	@echo "--- Local Database ---"
 	@$(call use_env,local) \
 		&& (cd $(SERVER_DIR) && \
@@ -66,20 +76,17 @@ init-db: ## Initializes postgres in docker and runs existing migrations
 			docker-compose exec db psql -U postgres -c "CREATE DATABASE $$DATABASE_NAME;")
 	@echo "✓ Test database ready."
 	@echo
-	@echo ">> [3/5] Running migrations for local DB..."
+	@echo ">> [5/6] Running migrations for local DB..."
 	@$(call use_env,local) \
 		&& (cd $(SERVER_DIR) && \
 			go tool goose -dir db/migrations postgres "$$DATABASE_URL" up)
 	@echo "✓ Migrations applied to local DB."
 	@echo
-	@echo ">> [4/5] Running migrations for test DB..."
+	@echo ">> [6/6] Running migrations for test DB..."
 	@$(call use_env,test) \
 		&& (cd $(SERVER_DIR) && \
 			go tool goose -dir db/migrations postgres "$$DATABASE_URL" up)
 	@echo "✓ Migrations applied to test DB."
-	@echo
-	@echo ">> [5/5] Formatting generated backend code..."
-	@$(MAKE) format
 	@echo
 	@echo "Database initialization complete!"
 	@echo

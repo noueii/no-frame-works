@@ -11,11 +11,20 @@ func (r *PostgresPostRepository) Create(ctx context.Context, p domain.Post) (*do
 	row := r.db.QueryRowContext(
 		ctx,
 		`INSERT INTO "post" (title, content, author_id) VALUES ($1, $2, $3) RETURNING id, title, content, author_id, created_at, updated_at`,
-		p.Title, p.Content, p.AuthorID,
+		p.Title,
+		p.Content,
+		p.AuthorID,
 	)
 
 	var created domain.Post
-	err := row.Scan(&created.ID, &created.Title, &created.Content, &created.AuthorID, &created.CreatedAt, &created.UpdatedAt)
+	err := row.Scan(
+		&created.ID,
+		&created.Title,
+		&created.Content,
+		&created.AuthorID,
+		&created.CreatedAt,
+		&created.UpdatedAt,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("insert post: %w", err)
 	}

@@ -9,7 +9,11 @@ import (
 )
 
 // Execute creates a new user.
-func Execute(ctx context.Context, repo user.UserRepository, req user.CreateUserRequest) (user.UserView, error) {
+func Execute(
+	ctx context.Context,
+	repo user.UserRepository,
+	req user.CreateUserRequest,
+) (user.UserView, error) {
 	if err := req.Validate(); err != nil {
 		return user.UserView{}, fmt.Errorf("validation failed: %w", err)
 	}

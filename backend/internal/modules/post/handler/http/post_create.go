@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/noueii/no-frame-works/internal/core/actor"
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
 
 type createPostRequestBody struct {
-	Title    string `json:"title"`
-	Content  string `json:"content"`
-	AuthorID string `json:"authorId"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }
 
 type postResponse struct {
@@ -39,10 +39,16 @@ func (h *Handler) PostCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a := actor.ActorFrom(r.Context())
+	if a == nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	req := post.CreatePostRequest{
 		Title:    body.Title,
 		Content:  body.Content,
-		AuthorID: body.AuthorID,
+		AuthorID: a.UserID().String(),
 	}
 
 	result, err := h.api.CreatePost(r.Context(), req)

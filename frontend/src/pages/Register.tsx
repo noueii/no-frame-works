@@ -7,8 +7,6 @@ export function Register() {
   const [register, { isLoading }] = usePostAuthRegisterMutation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,7 +15,7 @@ export function Register() {
 
     try {
       const result = await register({
-        registerRequest: { email, password, firstName, lastName },
+        registerRequest: { email, password },
       }).unwrap()
       localStorage.setItem('session_token', result.sessionToken)
       navigate('/')
@@ -32,33 +30,6 @@ export function Register() {
         <h1 className="text-2xl font-semibold text-center text-gray-900">Register</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                First Name
-              </label>
-              <input
-                id="firstName"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                Last Name
-              </label>
-              <input
-                id="lastName"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email

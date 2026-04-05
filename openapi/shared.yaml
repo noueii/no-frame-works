@@ -1,0 +1,155 @@
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+        - id
+        - name
+        - email
+    CreateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+        - name
+        - email
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+        authorId:
+          type: string
+          format: uuid
+        authorName:
+          type: string
+      required:
+        - id
+        - title
+        - content
+        - authorId
+        - authorName
+    CreatePostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        authorId:
+          type: string
+          format: uuid
+      required:
+        - title
+        - content
+        - authorId
+  responses:
+    Error400:
+      description: Bad Request error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+    Error401:
+      description: Unauthorized error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+    Error403:
+      description: Forbidden error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+    Error404:
+      description: Not found error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+    Error500:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+  securitySchemes: {}

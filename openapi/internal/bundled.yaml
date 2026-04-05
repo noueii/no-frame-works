@@ -2,76 +2,17 @@ openapi: 3.0.0
 info:
   title: No Frame Works API
   version: '1.0'
-  description: API spec for no-frame-works backend
+  description: API spec for the no-frame-works backend
+  contact:
+    name: noueii
 servers:
   - url: http://localhost:8110
 paths:
-  /auth/login:
-    post:
-      operationId: post-auth-login
-      summary: Login
-      description: Authenticate with email and password
-      tags:
-        - auth
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        '200':
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SessionResponse'
-        '400':
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-
-  /auth/register:
-    post:
-      operationId: post-auth-register
-      summary: Register
-      description: Create a new account
-      tags:
-        - auth
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
-      responses:
-        '200':
-          description: Registration successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SessionResponse'
-        '400':
-          $ref: '#/components/responses/Error'
-
-  /auth/logout:
-    post:
-      operationId: post-auth-logout
-      summary: Logout
-      description: Destroy current session
-      tags:
-        - auth
-      responses:
-        '204':
-          description: Logout successful
-
   /users:
     post:
-      operationId: post-create-user
+      operationId: create-user
       summary: Create User
-      description: Create a new user
-      tags:
-        - users
+      description: Creates a new user
       requestBody:
         required: true
         content:
@@ -86,15 +27,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         '400':
-          $ref: '#/components/responses/Error'
-
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
   /users/{id}:
     get:
       operationId: get-user
       summary: Get User
-      description: Get a user by ID
-      tags:
-        - users
+      description: Gets a user by ID
       parameters:
         - name: id
           in: path
@@ -110,15 +50,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         '404':
-          $ref: '#/components/responses/Error'
-
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
   /posts:
     post:
-      operationId: post-create-post
+      operationId: create-post
       summary: Create Post
-      description: Create a new post
-      tags:
-        - posts
+      description: Creates a new post
       requestBody:
         required: true
         content:
@@ -133,15 +72,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Post'
         '400':
-          $ref: '#/components/responses/Error'
-
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
   /posts/{id}:
     get:
       operationId: get-post
       summary: Get Post
-      description: Get a post by ID
-      tags:
-        - posts
+      description: Gets a post by ID
       parameters:
         - name: id
           in: path
@@ -157,15 +95,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Post'
         '404':
-          $ref: '#/components/responses/Error'
-
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
   /posts/by-author/{authorId}:
     get:
-      operationId: get-posts-by-author
+      operationId: list-posts-by-author
       summary: List Posts by Author
-      description: List all posts by a given author
-      tags:
-        - posts
+      description: Lists all posts by a given author
       parameters:
         - name: authorId
           in: path
@@ -182,41 +119,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Post'
-
+        '500':
+          $ref: '#/components/responses/Error500'
 components:
   schemas:
-    LoginRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-      required:
-        - email
-        - password
-
-    RegisterRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-      required:
-        - email
-        - password
-
-    SessionResponse:
-      type: object
-      properties:
-        sessionToken:
-          type: string
-      required:
-        - sessionToken
-
     CreateUserRequest:
       type: object
       properties:
@@ -228,7 +134,6 @@ components:
       required:
         - name
         - email
-
     User:
       type: object
       properties:
@@ -244,7 +149,6 @@ components:
         - id
         - name
         - email
-
     CreatePostRequest:
       type: object
       properties:
@@ -252,10 +156,13 @@ components:
           type: string
         content:
           type: string
+        authorId:
+          type: string
+          format: uuid
       required:
         - title
         - content
-
+        - authorId
     Post:
       type: object
       properties:
@@ -277,16 +184,58 @@ components:
         - content
         - authorId
         - authorName
-
   responses:
-    Error:
-      description: Error response
+    Error400:
+      description: Bad Request error
       content:
         application/json:
           schema:
             type: object
             properties:
-              error:
+              errorCode:
                 type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
             required:
-              - error
+              - errorCode
+              - errorMessage
+              - data
+    Error500:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+    Error404:
+      description: Not found error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
