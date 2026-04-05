@@ -1,57 +1,40 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-
-interface Post {
-  id: string
-  title: string
-  content: string
-  authorId: string
-  authorName: string
-}
+import {
+  usePostPostsMutation,
+  useGetPostsByAuthorByAuthorIdQuery,
+} from '../services/api/api'
 
 export function Home() {
-  const { sessionToken, logout } = useAuth()
+  const { logout } = useAuth()
+  const [createPost, { isLoading }] = usePostPostsMutation()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [authorId, setAuthorId] = useState('')
-  const [posts, setPosts] = useState<Post[]>([])
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+
+  // Only fetch posts when authorId is set
+  const { data: posts } = useGetPostsByAuthorByAuthorIdQuery(
+    { authorId },
+    { skip: !authorId },
+  )
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setSuccess(null)
-    setLoading(true)
 
     try {
-      const res = await fetch('/api/v1/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': `ory_kratos_session=${sessionToken}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ title, content, authorId }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || 'Failed to create post')
-        return
-      }
-
-      const post = await res.json()
-      setPosts((prev) => [post, ...prev])
+      await createPost({
+        createPostRequest: { title, content, authorId },
+      }).unwrap()
       setTitle('')
       setContent('')
       setSuccess('Post created!')
       setTimeout(() => setSuccess(null), 3000)
     } catch {
-      setError('Something went wrong')
-    } finally {
-      setLoading(false)
+      setError('Failed to create post')
     }
   }
 
@@ -120,15 +103,15 @@ export function Home() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Post'}
+              {isLoading ? 'Creating...' : 'Create Post'}
             </button>
           </form>
         </section>
 
-        {posts.length > 0 && (
+        {posts && posts.length > 0 && (
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900">Posts</h2>
             {posts.map((post) => (

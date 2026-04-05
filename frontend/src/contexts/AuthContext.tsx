@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePostAuthLogoutMutation } from '../services/api/api'
 
 interface AuthContextValue {
   sessionToken: string
@@ -16,9 +17,10 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem('session_token')
+    () => localStorage.getItem('session_token'),
   )
   const navigate = useNavigate()
+  const [logoutMutation] = usePostAuthLogoutMutation()
 
   useEffect(() => {
     if (!token) {
@@ -27,10 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token, navigate])
 
   const logout = async () => {
-    await fetch('/api/v1/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    })
+    await logoutMutation()
     localStorage.removeItem('session_token')
     setToken(null)
   }

@@ -1,39 +1,24 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { usePostAuthLoginMutation } from '../services/api/api'
 
 export function Login() {
   const navigate = useNavigate()
+  const [login, { isLoading }] = usePostAuthLoginMutation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    setLoading(true)
 
     try {
-      const res = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || 'Login failed')
-        return
-      }
-
-      const data = await res.json()
-      localStorage.setItem('session_token', data.sessionToken)
+      const result = await login({ loginRequest: { email, password } }).unwrap()
+      localStorage.setItem('session_token', result.sessionToken)
       navigate('/')
     } catch {
-      setError('Something went wrong')
-    } finally {
-      setLoading(false)
+      setError('Invalid credentials')
     }
   }
 
@@ -75,10 +60,10 @@ export function Login() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

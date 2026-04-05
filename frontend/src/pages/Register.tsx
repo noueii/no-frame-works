@@ -1,41 +1,28 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { usePostAuthRegisterMutation } from '../services/api/api'
 
 export function Register() {
   const navigate = useNavigate()
+  const [register, { isLoading }] = usePostAuthRegisterMutation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    setLoading(true)
 
     try {
-      const res = await fetch('/api/v1/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password, firstName, lastName }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || 'Registration failed')
-        return
-      }
-
-      const data = await res.json()
-      localStorage.setItem('session_token', data.sessionToken)
+      const result = await register({
+        registerRequest: { email, password, firstName, lastName },
+      }).unwrap()
+      localStorage.setItem('session_token', result.sessionToken)
       navigate('/')
     } catch {
-      setError('Something went wrong')
-    } finally {
-      setLoading(false)
+      setError('Registration failed')
     }
   }
 
@@ -104,10 +91,10 @@ export function Register() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Registering...' : 'Register'}
+            {isLoading ? 'Registering...' : 'Register'}
           </button>
         </form>
 
