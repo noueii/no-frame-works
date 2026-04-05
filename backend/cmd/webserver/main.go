@@ -8,8 +8,12 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/noueii/no-frame-works/config"
+	"github.com/noueii/no-frame-works/config/provider"
 	"github.com/noueii/no-frame-works/internal/webserver"
 	"github.com/noueii/no-frame-works/internal/webserver/middleware"
+
+	// Auth module
+	authhandler "github.com/noueii/no-frame-works/internal/modules/auth/handler/http"
 
 	// User module
 	usermod "github.com/noueii/no-frame-works/internal/modules/user"
@@ -62,13 +66,22 @@ func run() error {
 	userHandler := userhandler.New(userAPI)
 	postHandler := posthandler.New(postAPI)
 
-	// Create webserver with route registrars
-	ws := webserver.NewWebserver(a, func(r chi.Router) {
-		r.Use(middleware.NewActorMiddleware(a.IdentityClient()))
+	kratosClient := provider.NewKratosProvider(a.EnvVars())
+	authHandler := authhandler.New(kratosClient)
 
-		userhandler.RegisterRoutes(r, userHandler)
-		posthandler.RegisterRoutes(r, postHandler)
-	})
+	// Create webserver with route registrars
+	ws := webserver.NewWebserver(a,
+		// Public routes (no auth middleware)
+		func(r chi.Router) {
+			authhandler.RegisterRoutes(r, authHandler)
+		},
+		// Authenticated routes
+		func(r chi.Router) {
+			r.Use(middleware.NewActorMiddleware(a.IdentityClient()))
+			userhandler.RegisterRoutes(r, userHandler)
+			posthandler.RegisterRoutes(r, postHandler)
+		},
+	)
 
 	if startErr := ws.Start(); startErr != nil {
 		return fmt.Errorf("webserver failed: %w", startErr)
