@@ -8,5 +8,6 @@ func RegisterRoutes(r chi.Router, h *Handler) {
 		r.Post("/login", h.Login)
 		r.Post("/register", h.Register)
 		r.Post("/logout", h.Logout)
+		r.Get("/me", h.Me)
 	})
 }

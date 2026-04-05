@@ -75,7 +75,17 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token := reg.GetSessionToken()
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "ory_kratos_session",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
 	writeJSON(w, http.StatusOK, registerResponse{
-		SessionToken: reg.GetSessionToken(),
+		SessionToken: token,
 	})
 }

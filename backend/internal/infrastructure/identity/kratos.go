@@ -16,8 +16,8 @@ func NewKratosClient(client *ory.APIClient) *KratosClient {
 	return &KratosClient{client: client}
 }
 
-func (c *KratosClient) GetMeDetail(ctx context.Context, cookie string) (*UserDetail, error) {
-	session, _, err := c.client.FrontendAPI.ToSession(ctx).Cookie(cookie).Execute()
+func (c *KratosClient) GetMeDetail(ctx context.Context, sessionToken string) (*UserDetail, error) {
+	session, _, err := c.client.FrontendAPI.ToSession(ctx).XSessionToken(sessionToken).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("kratos session check failed: %w", err)
 	}

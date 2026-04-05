@@ -14,20 +14,18 @@ type createPostRequestBody struct {
 }
 
 type postResponse struct {
-	ID         string `json:"id"`
-	Title      string `json:"title"`
-	Content    string `json:"content"`
-	AuthorID   string `json:"authorId"`
-	AuthorName string `json:"authorName"`
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+	AuthorID string `json:"authorId"`
 }
 
 func toPostResponse(v post.PostView) postResponse {
 	return postResponse{
-		ID:         v.ID,
-		Title:      v.Title,
-		Content:    v.Content,
-		AuthorID:   v.AuthorID,
-		AuthorName: v.AuthorName,
+		ID:       v.ID,
+		Title:    v.Title,
+		Content:  v.Content,
+		AuthorID: v.AuthorID,
 	}
 }
 

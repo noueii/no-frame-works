@@ -65,27 +65,21 @@ paths:
         '204':
           description: Logout successful
 
-  /users:
-    post:
-      operationId: post-create-user
-      summary: Create User
-      description: Create a new user
+  /auth/me:
+    get:
+      operationId: get-auth-me
+      summary: Get Current User
+      description: Returns the currently authenticated user or 401
       tags:
-        - users
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateUserRequest'
+        - auth
       responses:
-        '201':
-          description: User created
+        '200':
+          description: Authenticated user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '400':
+                $ref: '#/components/schemas/AuthUser'
+        '401':
           $ref: '#/components/responses/Error'
 
   /users/{id}:
@@ -185,6 +179,18 @@ paths:
 
 components:
   schemas:
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+        - id
+        - email
+
     LoginRequest:
       type: object
       properties:
@@ -217,32 +223,17 @@ components:
       required:
         - sessionToken
 
-    CreateUserRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        email:
-          type: string
-          format: email
-      required:
-        - name
-        - email
-
     User:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        name:
-          type: string
         email:
           type: string
           format: email
       required:
         - id
-        - name
         - email
 
     CreatePostRequest:
@@ -268,15 +259,11 @@ components:
           type: string
         authorId:
           type: string
-          format: uuid
-        authorName:
-          type: string
       required:
         - id
         - title
         - content
         - authorId
-        - authorName
 
   responses:
     Error:

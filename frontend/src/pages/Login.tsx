@@ -14,8 +14,7 @@ export function Login() {
     setError(null)
 
     try {
-      const result = await login({ loginRequest: { email, password } }).unwrap()
-      localStorage.setItem('session_token', result.sessionToken)
+      await login({ loginRequest: { email, password } }).unwrap()
       navigate('/')
     } catch {
       setError('Invalid credentials')

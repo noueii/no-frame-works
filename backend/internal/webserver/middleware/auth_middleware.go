@@ -14,13 +14,14 @@ import (
 func NewActorMiddleware(idClient identity.Client) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie := r.Header.Get("Cookie")
-			if cookie == "" {
+			// Extract session token from the ory_kratos_session cookie
+			sessionCookie, err := r.Cookie("ory_kratos_session")
+			if err != nil || sessionCookie.Value == "" {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
 				return
 			}
 
-			detail, err := idClient.GetMeDetail(r.Context(), cookie)
+			detail, err := idClient.GetMeDetail(r.Context(), sessionCookie.Value)
 			if err != nil {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
 				return

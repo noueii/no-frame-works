@@ -14,10 +14,7 @@ export function Register() {
     setError(null)
 
     try {
-      const result = await register({
-        registerRequest: { email, password },
-      }).unwrap()
-      localStorage.setItem('session_token', result.sessionToken)
+      await register({ registerRequest: { email, password } }).unwrap()
       navigate('/')
     } catch {
       setError('Registration failed')

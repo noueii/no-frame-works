@@ -14,11 +14,10 @@ type Permission string
 
 // PostView is the exported type that external consumers see.
 type PostView struct {
-	ID         string
-	Title      string
-	Content    string
-	AuthorID   string
-	AuthorName string
+	ID       string
+	Title    string
+	Content  string
+	AuthorID string
 }
 
 // CreatePostRequest is the request to create a new post.

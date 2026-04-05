@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import './index.css'
 import { store } from './store'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, GuestGuard } from './contexts/AuthContext'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Home } from './pages/Home'
@@ -14,8 +14,8 @@ createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<GuestGuard><Login /></GuestGuard>} />
+          <Route path="/register" element={<GuestGuard><Register /></GuestGuard>} />
           <Route
             path="/*"
             element={

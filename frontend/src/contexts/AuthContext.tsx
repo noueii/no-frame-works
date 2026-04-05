@@ -1,9 +1,13 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { usePostAuthLogoutMutation } from '../services/api/api'
+import { createContext, useContext, type ReactNode } from 'react'
+import { Navigate } from 'react-router-dom'
+import {
+  useGetAuthMeQuery,
+  usePostAuthLogoutMutation,
+  type AuthUser,
+} from '../services/api/api'
 
 interface AuthContextValue {
-  sessionToken: string
+  user: AuthUser
   logout: () => Promise<void>
 }
 
@@ -15,30 +19,32 @@ export function useAuth() {
   return ctx
 }
 
+// Wraps protected routes — redirects to /login if not authenticated.
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem('session_token'),
-  )
-  const navigate = useNavigate()
+  const { data: user, isLoading, isError } = useGetAuthMeQuery()
   const [logoutMutation] = usePostAuthLogoutMutation()
 
-  useEffect(() => {
-    if (!token) {
-      navigate('/login')
-    }
-  }, [token, navigate])
+  if (isLoading) return null
+  if (isError || !user) return <Navigate to="/login" replace />
 
   const logout = async () => {
-    await logoutMutation()
-    localStorage.removeItem('session_token')
-    setToken(null)
+    await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include', redirect: 'follow' })
+    window.location.href = '/login'
   }
 
-  if (!token) return null
-
   return (
-    <AuthContext.Provider value={{ sessionToken: token, logout }}>
+    <AuthContext.Provider value={{ user, logout }}>
       {children}
     </AuthContext.Provider>
   )
+}
+
+// Wraps public routes (login, register) — redirects to / if already authenticated.
+export function GuestGuard({ children }: { children: ReactNode }) {
+  const { data: user, isLoading } = useGetAuthMeQuery()
+
+  if (isLoading) return null
+  if (user) return <Navigate to="/" replace />
+
+  return <>{children}</>
 }

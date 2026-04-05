@@ -35,13 +35,9 @@ const injectedRtkApi = api
         query: () => ({ url: `/auth/logout`, method: "POST" }),
         invalidatesTags: ["auth"],
       }),
-      postUsers: build.mutation<PostUsersApiResponse, PostUsersApiArg>({
-        query: (queryArg) => ({
-          url: `/users`,
-          method: "POST",
-          body: queryArg.createUserRequest,
-        }),
-        invalidatesTags: ["users"],
+      getAuthMe: build.query<GetAuthMeApiResponse, GetAuthMeApiArg>({
+        query: () => ({ url: `/auth/me` }),
+        providesTags: ["auth"],
       }),
       getUsersById: build.query<GetUsersByIdApiResponse, GetUsersByIdApiArg>({
         query: (queryArg) => ({ url: `/users/${queryArg.id}` }),
@@ -82,10 +78,9 @@ export type PostAuthRegisterApiArg = {
 };
 export type PostAuthLogoutApiResponse = unknown;
 export type PostAuthLogoutApiArg = void;
-export type PostUsersApiResponse = /** status 201 User created */ User;
-export type PostUsersApiArg = {
-  createUserRequest: CreateUserRequest;
-};
+export type GetAuthMeApiResponse =
+  /** status 200 Authenticated user */ AuthUser;
+export type GetAuthMeApiArg = void;
 export type GetUsersByIdApiResponse = /** status 200 User found */ User;
 export type GetUsersByIdApiArg = {
   id: string;
@@ -114,13 +109,12 @@ export type RegisterRequest = {
   email: string;
   password: string;
 };
-export type User = {
+export type AuthUser = {
   id: string;
-  name: string;
   email: string;
 };
-export type CreateUserRequest = {
-  name: string;
+export type User = {
+  id: string;
   email: string;
 };
 export type Post = {
@@ -128,7 +122,6 @@ export type Post = {
   title: string;
   content: string;
   authorId: string;
-  authorName: string;
 };
 export type CreatePostRequest = {
   title: string;
@@ -138,7 +131,8 @@ export const {
   usePostAuthLoginMutation,
   usePostAuthRegisterMutation,
   usePostAuthLogoutMutation,
-  usePostUsersMutation,
+  useGetAuthMeQuery,
+  useLazyGetAuthMeQuery,
   useGetUsersByIdQuery,
   useLazyGetUsersByIdQuery,
   usePostPostsMutation,

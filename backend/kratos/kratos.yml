@@ -34,6 +34,9 @@ selfservice:
   methods:
     password:
       enabled: true
+      config:
+        haveibeenpwned_enabled: false
+        min_password_length: 8
     oidc:
       enabled: true
       config:
