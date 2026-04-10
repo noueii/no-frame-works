@@ -24,6 +24,8 @@ lint: ## Lints the codebase
         -e GOLANGCI_LINT_CACHE=/tmp/golangci-lint \
         -e HOME=/tmp \
         golangci/golangci-lint:v2.4.0 golangci-lint run
+	@echo "Running convention checks..."
+	@.github/scripts/run-checks.sh HEAD~1 | .github/scripts/format-terminal.sh
 
 .PHONY: test
 test: ## Runs tests for the codebase

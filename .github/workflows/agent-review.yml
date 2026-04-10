@@ -1,0 +1,371 @@
+# .github/workflows/agent-review.yml
+#
+# Runs 3 parallel Claude Code agents to review the PR diff.
+# ADVISORY — does NOT block merge.
+#
+# Agents output structured findings. A final job collects all results
+# and posts a single batched GitHub review with inline comments.
+#
+# Auth: Uses CLAUDE_CODE_OAUTH_TOKEN (Claude Pro/Max subscription).
+# Generate it locally with: claude setup-token
+# Then add it as a GitHub secret: Settings → Secrets → Actions → CLAUDE_CODE_OAUTH_TOKEN
+
+name: Agent Convention Review
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  backend-review:
+    name: Backend layer review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing the backend layers of this pull request:
+            handlers, services, domain, repositories, and infrastructure.
+
+            Read .agents/caveman-review.md first — follow its format for all
+            comments (terse, one line per finding, severity prefix).
+
+            Read these rule files — they contain all the rules you must check:
+            - .agents/rules/handler.md
+            - .agents/rules/service.md
+            - .agents/rules/domain.md
+            - .agents/rules/repository.md
+
+            Then review the PR diff. For each changed file, identify which layer
+            it belongs to and check it against that layer's rules.
+
+            Additionally, check infrastructure conventions for any files in
+            backend/internal/infrastructure/ or any file that imports an external
+            SDK directly. The infrastructure rules are:
+
+            1. Interface first, implementation second. Every external service gets
+               a package under internal/infrastructure/<service>/ with:
+               - client.go: provider-agnostic interface + data types (no SDK imports)
+               - <impl>.go: production implementation that wraps the SDK
+               - testing.go: configurable test double with default constructor
+            2. No SDK leakage. Only the implementation file (<impl>.go) may import
+               the external SDK. If you see an SDK import (e.g. ory, aws, stripe,
+               twilio, sendgrid) in a handler, service, repository, or client.go —
+               flag it.
+            3. Constructor takes pre-configured SDK client. The implementation
+               constructor receives an already-initialized SDK client, not raw
+               config or env vars. SDK initialization belongs in config/provider/.
+            4. Data types owned by the package. Each infrastructure package defines
+               its own types in client.go. No shared infrastructure types package.
+            5. Interface lives in infrastructure, not in config/provider/. The
+               provider file wires the implementation, it does not define the
+               interface. (AsynqClient in queue_provider.go is a known exception.)
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it.
+            If no backend code was changed, say so and stop.
+
+            DO NOT post inline comments. Output ONLY a single JSON block wrapped in
+            an HTML comment. No other text. No summary. No explanation.
+
+            <!-- FINDINGS_JSON [{"area":"Handler","severity":"🔴 bug","path":"backend/file.go","line":42,"body":"description. Fix."}] -->
+
+            Each finding needs: area (Handler/Service/Domain/Repository/Infrastructure), severity (🔴 bug/🟠 conv/🟡 risk/🔵 nit), path (repo-relative), line (integer), body (one-line).
+
+            For clean layers, include: {"area":"Handler","severity":"✅","path":"","line":0,"body":""}
+
+            If no findings at all, output: <!-- FINDINGS_JSON [{"area":"Handler","severity":"✅","path":"","line":0,"body":""},{"area":"Service","severity":"✅","path":"","line":0,"body":""},{"area":"Domain","severity":"✅","path":"","line":0,"body":""},{"area":"Repository","severity":"✅","path":"","line":0,"body":""},{"area":"Infrastructure","severity":"✅","path":"","line":0,"body":""}] -->
+
+          claude_args: '--model claude-sonnet-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*)"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/backend-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-result
+          path: /home/runner/work/_temp/backend-result.json
+          retention-days: 1
+
+  flow-review:
+    name: Flow integrity review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing the end-to-end request flow of this pull request.
+
+            Read .agents/caveman-review.md first — follow its format for all
+            comments (terse, one line per finding, severity prefix).
+
+            Read the file .agents/rules/flow.md — it contains the
+            expected request lifecycle and the rules you must check against.
+
+            Then review the PR diff. For each new or modified endpoint, trace
+            the full flow: handler → service → repository and back. Verify
+            no steps are skipped, types are correct at each boundary, and
+            the return path is complete.
+
+            You will need to read files beyond the diff to trace the full flow.
+            Use Read, Grep, and Glob to follow the call chain.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it.
+            If no new endpoints were added or modified, say so and stop.
+
+            DO NOT post inline comments. Output ONLY a single JSON block wrapped in
+            an HTML comment. No other text. No summary. No explanation.
+
+            <!-- FINDINGS_JSON [{"area":"Flow","severity":"🔴 bug","path":"backend/file.go","line":42,"body":"description. Fix."}] -->
+
+            Each finding needs: area (always "Flow"), severity (🔴 bug/🟠 conv/🟡 risk), path (repo-relative), line (integer), body (one-line).
+
+            If all flows are clean, output: <!-- FINDINGS_JSON [{"area":"Flow","severity":"✅","path":"","line":0,"body":""}] -->
+
+          claude_args: '--model claude-opus-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*)"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/flow-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flow-result
+          path: /home/runner/work/_temp/flow-result.json
+          retention-days: 1
+
+  patterns-review:
+    name: Common patterns review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing this pull request for common coding mistakes.
+
+            Read .agents/caveman-review.md first — follow its format for all
+            comments (terse, one line per finding, severity prefix).
+
+            Read the file .agents/rules/patterns.md — it contains all
+            the rules you must check against.
+
+            Then review the PR diff. Check ALL changed .go files for these
+            patterns — they can appear in any layer.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it.
+            If no Go files were changed, say so and stop.
+
+            DO NOT post inline comments. Output ONLY a single JSON block wrapped in
+            an HTML comment. No other text. No summary. No explanation.
+
+            <!-- FINDINGS_JSON [{"area":"Patterns","severity":"🔴 bug","path":"backend/file.go","line":42,"body":"description. Fix."}] -->
+
+            Each finding needs: area (always "Patterns"), severity (🔴 bug/🟠 conv/🟡 risk), path (repo-relative), line (integer), body (one-line).
+
+            If no issues found, output: <!-- FINDINGS_JSON [{"area":"Patterns","severity":"✅","path":"","line":0,"body":""}] -->
+
+          claude_args: '--model claude-sonnet-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*)"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/patterns-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patterns-result
+          path: /home/runner/work/_temp/patterns-result.json
+          retention-days: 1
+
+  post-summary:
+    name: Post consolidated review
+    runs-on: ubuntu-latest
+    needs: [backend-review, flow-review, patterns-review]
+    if: always()
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/results
+
+      - name: Post batched review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const resultFiles = [
+              'backend-result/backend-result.json',
+              'flow-result/flow-result.json',
+              'patterns-result/patterns-result.json',
+            ];
+
+            // Collect all findings from all agents
+            const allRows = [];
+            const inlineComments = [];
+
+            for (const file of resultFiles) {
+              const filePath = path.join('/tmp/results', file);
+              if (!fs.existsSync(filePath)) continue;
+
+              try {
+                const messages = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                const resultMsg = Array.isArray(messages)
+                  ? messages.find(m => m.type === 'result' && m.result)
+                  : null;
+                if (!resultMsg || !resultMsg.result) continue;
+
+                const jsonMatch = resultMsg.result.match(/<!-- FINDINGS_JSON (\[.*?\]) -->/s);
+                if (!jsonMatch) continue;
+
+                const findings = JSON.parse(jsonMatch[1]);
+                for (const f of findings) {
+                  allRows.push(f);
+                  if (f.severity !== '✅' && f.path && f.line > 0) {
+                    inlineComments.push({ path: f.path, line: f.line, body: `${f.severity}: ${f.body}` });
+                  }
+                }
+              } catch (e) {
+                console.log(`Failed to parse ${file}: ${e.message}`);
+              }
+            }
+
+            // Build table
+            let body = '## 🤖 Convention Review Summary\n\n';
+            body += '| Area | Result | Finding |\n';
+            body += '|------|--------|---------|\n';
+
+            for (const row of allRows) {
+              if (row.severity === '✅') {
+                body += `| ${row.area} | ✅ | |\n`;
+              } else {
+                const loc = row.path ? `\`${row.path.replace('backend/', '')}:${row.line}\`` : '';
+                body += `| ${row.area} | ${row.severity} | ${loc} — ${row.body} |\n`;
+              }
+            }
+
+            if (allRows.length === 0) {
+              body += '| — | — | _No agent results available_ |\n';
+            }
+
+            body += '\n---\n_Advisory review. Use your own judgment._\n';
+
+            // Post or update summary comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Convention Review Summary')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
+
+            // Post single batched review with inline comments
+            if (inlineComments.length > 0) {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+              });
+
+              // Get diff to find valid line numbers — GitHub only accepts lines in the diff
+              const { data: files } = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                per_page: 100,
+              });
+
+              // Build set of valid (path, line) pairs from diff hunks
+              const validLines = new Set();
+              for (const file of files) {
+                if (!file.patch) continue;
+                const lines = file.patch.split('\n');
+                let lineNum = 0;
+                for (const line of lines) {
+                  const hunkMatch = line.match(/^@@ -\d+(?:,\d+)? \+(\d+)/);
+                  if (hunkMatch) {
+                    lineNum = parseInt(hunkMatch[1]);
+                    continue;
+                  }
+                  if (line.startsWith('-')) continue; // deleted line, no position in new file
+                  if (lineNum > 0) {
+                    validLines.add(`${file.filename}:${lineNum}`);
+                    lineNum++;
+                  }
+                }
+              }
+
+              // Filter to only comments on lines that exist in the diff
+              const validComments = inlineComments.filter(c =>
+                validLines.has(`${c.path}:${c.line}`)
+              );
+
+              if (validComments.length > 0) {
+                await github.rest.pulls.createReview({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  commit_id: pr.head.sha,
+                  body: `${validComments.length} finding(s).`,
+                  comments: validComments,
+                  event: 'COMMENT',
+                });
+              }
+            }
