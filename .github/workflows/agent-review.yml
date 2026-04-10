@@ -1,0 +1,412 @@
+# .github/workflows/agent-review.yml
+#
+# Runs 6 parallel Claude Code agents to review the PR diff, each focused
+# on one architectural layer or concern. ADVISORY — does NOT block merge.
+#
+# Agents post inline comments on specific violations. A final job collects
+# all results and posts a single consolidated summary comment.
+#
+# Auth: Uses CLAUDE_CODE_OAUTH_TOKEN (Claude Pro/Max subscription).
+# Generate it locally with: claude setup-token
+# Then add it as a GitHub secret: Settings → Secrets → Actions → CLAUDE_CODE_OAUTH_TOKEN
+
+name: Agent Convention Review
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  handler-review:
+    name: Handler layer review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing ONLY the handler layer of this pull request.
+
+            Read the file .agents/rules/handler.md — it contains all
+            the rules you must check against.
+
+            Then review the PR diff. Only look at files in handler/ directories
+            or files that contain HTTP handler code. Ignore everything else.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it. If no handler code was
+            changed, say so and stop.
+
+            For each violation, post an inline comment on the specific file and
+            line using the inline comment tool with `confirmed: true`.
+
+            After reviewing, output a text summary of your findings.
+
+            Format:
+            - If clean: "✅ No handler violations detected."
+            - If issues: list each with rule name, file, and explanation
+
+          claude_args: '--model claude-sonnet-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*),mcp__github_inline_comment__create_inline_comment"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/handler-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: handler-result
+          path: /home/runner/work/_temp/handler-result.json
+          retention-days: 1
+
+  service-review:
+    name: Service layer review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing ONLY the service layer of this pull request.
+
+            Read the file .agents/rules/service.md — it contains all
+            the rules you must check against.
+
+            Then review the PR diff. Only look at files in service/ directories,
+            api.go files, and middleware/permission.go files. Ignore everything else.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it. If no service code was
+            changed, say so and stop.
+
+            For each violation, post an inline comment on the specific file and
+            line using the inline comment tool with `confirmed: true`.
+
+            After reviewing, output a text summary of your findings.
+
+            Format:
+            - If clean: "✅ No service violations detected."
+            - If issues: list each with rule name, file, and explanation
+
+          claude_args: '--model claude-sonnet-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*),mcp__github_inline_comment__create_inline_comment"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/service-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: service-result
+          path: /home/runner/work/_temp/service-result.json
+          retention-days: 1
+
+  domain-review:
+    name: Domain layer review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing ONLY the domain layer of this pull request.
+
+            Read the file .agents/rules/domain.md — it contains all
+            the rules you must check against.
+
+            Then review the PR diff. Only look at files in domain/ directories
+            and error definition files. Ignore everything else.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it. If no domain code was
+            changed, say so and stop.
+
+            For each violation, post an inline comment on the specific file and
+            line using the inline comment tool with `confirmed: true`.
+
+            After reviewing, output a text summary of your findings.
+
+            Format:
+            - If clean: "✅ No domain violations detected."
+            - If issues: list each with rule name, file, and explanation
+
+          claude_args: '--model claude-sonnet-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*),mcp__github_inline_comment__create_inline_comment"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/domain-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: domain-result
+          path: /home/runner/work/_temp/domain-result.json
+          retention-days: 1
+
+  repository-review:
+    name: Repository layer review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing ONLY the repository layer of this pull request.
+
+            Read the file .agents/rules/repository.md — it contains all
+            the rules you must check against.
+
+            Then review the PR diff. Only look at files in repository/ directories.
+            Ignore everything else.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it. If no repository code was
+            changed, say so and stop.
+
+            For each violation, post an inline comment on the specific file and
+            line using the inline comment tool with `confirmed: true`.
+
+            After reviewing, output a text summary of your findings.
+
+            Format:
+            - If clean: "✅ No repository violations detected."
+            - If issues: list each with rule name, file, and explanation
+
+          claude_args: '--model claude-sonnet-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*),mcp__github_inline_comment__create_inline_comment"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/repository-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repository-result
+          path: /home/runner/work/_temp/repository-result.json
+          retention-days: 1
+
+  flow-review:
+    name: Flow integrity review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing the end-to-end request flow of this pull request.
+
+            Read the file .agents/rules/flow.md — it contains the
+            expected request lifecycle and the rules you must check against.
+
+            Then review the PR diff. For each new or modified endpoint, trace
+            the full flow: handler → service → repository and back. Verify
+            no steps are skipped, types are correct at each boundary, and
+            the return path is complete.
+
+            You will need to read files beyond the diff to trace the full flow.
+            Use Read, Grep, and Glob to follow the call chain.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it. If no new endpoints were
+            added or modified, say so and stop.
+
+            For each violation, post an inline comment on the specific file and
+            line using the inline comment tool with `confirmed: true`.
+
+            After reviewing, output a text summary of your findings.
+
+            Format:
+            - If clean: "✅ All request flows are correctly wired."
+            - If issues: list each broken flow with the steps involved
+
+          claude_args: '--model claude-opus-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*),mcp__github_inline_comment__create_inline_comment"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/flow-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flow-result
+          path: /home/runner/work/_temp/flow-result.json
+          retention-days: 1
+
+  patterns-review:
+    name: Common patterns review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          classify_inline_comments: false
+
+          prompt: |
+            You are reviewing this pull request for common coding mistakes.
+
+            Read the file .agents/rules/patterns.md — it contains all
+            the rules you must check against.
+
+            Then review the PR diff. Check ALL changed .go files for these
+            patterns — they can appear in any layer.
+
+            Only flag issues where you are at least 80% confident. When in doubt, don't flag it. If no Go files were
+            changed, say so and stop.
+
+            For each violation, post an inline comment on the specific file and
+            line using the inline comment tool with `confirmed: true`.
+
+            After reviewing, output a text summary of your findings.
+
+            Format:
+            - If clean: "✅ No common mistake patterns detected."
+            - If issues: list each with rule name, file, and explanation
+
+          claude_args: '--model claude-sonnet-4-6 --allowedTools "Read,Grep,Glob,Bash(git diff:*),mcp__github_inline_comment__create_inline_comment"'
+
+      - name: Save result
+        if: always()
+        run: |
+          if [ -f /home/runner/work/_temp/claude-execution-output.json ]; then
+            cp /home/runner/work/_temp/claude-execution-output.json /home/runner/work/_temp/patterns-result.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patterns-result
+          path: /home/runner/work/_temp/patterns-result.json
+          retention-days: 1
+
+  post-summary:
+    name: Post consolidated summary
+    runs-on: ubuntu-latest
+    needs: [handler-review, service-review, domain-review, repository-review, flow-review, patterns-review]
+    if: always()
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/results
+
+      - name: Post summary comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const agents = [
+              { name: 'Handler layer', file: 'handler-result/handler-result.json', emoji: '🔌' },
+              { name: 'Service layer', file: 'service-result/service-result.json', emoji: '⚙️' },
+              { name: 'Domain layer', file: 'domain-result/domain-result.json', emoji: '🏛️' },
+              { name: 'Repository layer', file: 'repository-result/repository-result.json', emoji: '🗄️' },
+              { name: 'Flow integrity', file: 'flow-result/flow-result.json', emoji: '🔄' },
+              { name: 'Common patterns', file: 'patterns-result/patterns-result.json', emoji: '🔍' },
+            ];
+
+            let body = '## 🤖 Convention Review Summary\n\n';
+
+            for (const agent of agents) {
+              const filePath = path.join('/tmp/results', agent.file);
+              body += `### ${agent.emoji} ${agent.name}\n`;
+
+              if (!fs.existsSync(filePath)) {
+                body += '_Agent did not produce results._\n\n';
+                continue;
+              }
+
+              try {
+                const messages = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                const resultMsg = Array.isArray(messages)
+                  ? messages.find(m => m.type === 'result' && m.result)
+                  : null;
+
+                if (resultMsg && resultMsg.result) {
+                  body += resultMsg.result + '\n\n';
+                } else {
+                  body += '_No findings._\n\n';
+                }
+              } catch (e) {
+                body += '_Failed to parse results._\n\n';
+              }
+            }
+
+            body += '---\n_Advisory review. Use your own judgment._\n';
+
+            // Find existing sticky comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Convention Review Summary')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
