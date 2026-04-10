@@ -1,0 +1,63 @@
+# .github/workflows/agent-review.yml
+#
+# Runs the official Claude Code action to review the PR diff for
+# judgment-based convention violations.
+# This is ADVISORY — it posts a review comment but does NOT block merge.
+#
+# Auth: Uses CLAUDE_CODE_OAUTH_TOKEN (Claude Pro/Max subscription).
+# Generate it locally with: claude setup-token
+# Then add it as a GitHub secret: Settings → Secrets → Actions → CLAUDE_CODE_OAUTH_TOKEN
+#
+# Alternatively, if you switch to API billing later, replace
+# claude_code_oauth_token with anthropic_api_key and use ANTHROPIC_API_KEY secret.
+
+name: Agent Convention Review
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  agent-review:
+    name: Agent convention review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code convention review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # The prompt tells Claude what to do with this PR.
+          # It reads the rubric file and reviews the diff against it.
+          prompt: |
+            You are reviewing this pull request for backend convention violations.
+
+            Read the file scripts/checks/agent_review_rubric.md — it contains the
+            full rubric of judgment-based rules to check.
+
+            Then review the PR diff against those rules. Only flag issues you are
+            CONFIDENT about. If a rule doesn't apply to the changes, skip it.
+
+            Post your findings as a clear, concise PR comment. Format:
+            - Start with "## 🤖 Agent convention review"
+            - If clean: "✅ No convention violations detected."
+            - If issues found: list each with the rule name, file, and explanation
+            - End with: "This is an advisory review. Use your own judgment."
+
+            Keep it short. Don't repeat the rubric. Don't explain rules that passed.
+            Only mention violations.
+
+          # Limit turns to keep cost and time reasonable
+          claude_args: "--max-turns 3 --model claude-opus-4-6"

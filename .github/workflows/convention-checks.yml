@@ -1,0 +1,164 @@
+# .github/workflows/convention-checks.yml
+#
+# Runs on every push and PR to check backend convention compliance.
+# This is a HARD GATE — it blocks merge if checks fail.
+
+name: Convention Checks
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  convention-checks:
+    name: Backend conventions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for diff
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'backend/go.mod'
+          cache-dependency-path: 'backend/go.sum'
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/checks/*.sh
+
+      - name: Run convention checks
+        id: checks
+        working-directory: .
+        run: |
+          # Determine base ref
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+          else
+            BASE_REF="HEAD~1"
+          fi
+
+          # Run checks, capture output
+          set +e
+          RESULTS=$(./scripts/checks/run-checks.sh "$BASE_REF" 2>/dev/null)
+          EXIT_CODE=$?
+          set -e
+
+          # Save results
+          echo "$RESULTS" > /tmp/check-results.json
+
+          # Set outputs
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          echo "summary=$(echo "$RESULTS" | jq -r '.summary')" >> "$GITHUB_OUTPUT"
+          echo "pass=$(echo "$RESULTS" | jq -r '.pass')" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('/tmp/check-results.json', 'utf8'));
+
+            const total = results.total_score;
+            const max = results.max_score;
+            const pct = results.percentage;
+            const pass = results.pass;
+
+            let body = pass
+              ? `## ✅ Convention checks passed (${total}/${max} — ${pct}%)\n\n`
+              : `## ❌ Convention checks failed (${total}/${max} — ${pct}%)\n\n`;
+
+            body += '| Check | Result | Score | Details |\n';
+            body += '|-------|--------|-------|---------|\n';
+
+            for (const check of results.checks) {
+              if (check.skipped) {
+                body += `| ${check.check} | ⏭️ skipped | — | ${check.details} |\n`;
+              } else if (check.pass) {
+                body += `| ${check.check} | ✅ pass | ${check.score}/${check.max_score} | ${check.details} |\n`;
+              } else {
+                body += `| ${check.check} | ❌ fail | ${check.score}/${check.max_score} | ${check.details} |\n`;
+              }
+            }
+
+            // Add failure details
+            const failures = results.checks.filter(c => !c.pass && !c.skipped);
+            if (failures.length > 0) {
+              body += '\n<details>\n<summary>Failure details</summary>\n\n';
+              for (const f of failures) {
+                body += `### ❌ ${f.check}\n`;
+                for (const msg of f.failures || []) {
+                  body += `- \`${msg}\`\n`;
+                }
+                body += '\n';
+              }
+              body += '</details>\n';
+            }
+
+            // Find existing comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Convention checks')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
+
+      - name: Fail if checks failed
+        if: steps.checks.outputs.pass != 'true'
+        run: |
+          echo "Convention checks failed: ${{ steps.checks.outputs.summary }}"
+          exit 1
+
+  golangci-lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'backend/go.mod'
+          cache-dependency-path: 'backend/go.sum'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.4.0
+          working-directory: backend
