@@ -43,6 +43,15 @@ const injectedRtkApi = api
         query: (queryArg) => ({ url: `/users/${queryArg.id}` }),
         providesTags: ["users"],
       }),
+      getPosts: build.query<GetPostsApiResponse, GetPostsApiArg>({
+        query: (queryArg) => ({
+          url: `/posts`,
+          params: {
+            authorId: queryArg.authorId,
+          },
+        }),
+        providesTags: ["posts"],
+      }),
       postPosts: build.mutation<PostPostsApiResponse, PostPostsApiArg>({
         query: (queryArg) => ({
           url: `/posts`,
@@ -55,12 +64,25 @@ const injectedRtkApi = api
         query: (queryArg) => ({ url: `/posts/${queryArg.id}` }),
         providesTags: ["posts"],
       }),
-      getPostsByAuthorByAuthorId: build.query<
-        GetPostsByAuthorByAuthorIdApiResponse,
-        GetPostsByAuthorByAuthorIdApiArg
+      putPostsById: build.mutation<PutPostsByIdApiResponse, PutPostsByIdApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/posts/${queryArg.id}`,
+            method: "PUT",
+            body: queryArg.updatePostRequest,
+          }),
+          invalidatesTags: ["posts"],
+        },
+      ),
+      deletePostsById: build.mutation<
+        DeletePostsByIdApiResponse,
+        DeletePostsByIdApiArg
       >({
-        query: (queryArg) => ({ url: `/posts/by-author/${queryArg.authorId}` }),
-        providesTags: ["posts"],
+        query: (queryArg) => ({
+          url: `/posts/${queryArg.id}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["posts"],
       }),
     }),
     overrideExisting: false,
@@ -85,6 +107,11 @@ export type GetUsersByIdApiResponse = /** status 200 User found */ User;
 export type GetUsersByIdApiArg = {
   id: string;
 };
+export type GetPostsApiResponse = /** status 200 Posts */ Post[];
+export type GetPostsApiArg = {
+  /** Filter posts by author ID */
+  authorId?: string;
+};
 export type PostPostsApiResponse = /** status 201 Post created */ Post;
 export type PostPostsApiArg = {
   createPostRequest: CreatePostRequest;
@@ -93,10 +120,14 @@ export type GetPostsByIdApiResponse = /** status 200 Post found */ Post;
 export type GetPostsByIdApiArg = {
   id: string;
 };
-export type GetPostsByAuthorByAuthorIdApiResponse =
-  /** status 200 Posts found */ Post[];
-export type GetPostsByAuthorByAuthorIdApiArg = {
-  authorId: string;
+export type PutPostsByIdApiResponse = /** status 200 Post updated */ Post;
+export type PutPostsByIdApiArg = {
+  id: string;
+  updatePostRequest: UpdatePostRequest;
+};
+export type DeletePostsByIdApiResponse = unknown;
+export type DeletePostsByIdApiArg = {
+  id: string;
 };
 export type SessionResponse = {
   sessionToken: string;
@@ -127,6 +158,10 @@ export type CreatePostRequest = {
   title: string;
   content: string;
 };
+export type UpdatePostRequest = {
+  title: string;
+  content: string;
+};
 export const {
   usePostAuthLoginMutation,
   usePostAuthRegisterMutation,
@@ -135,9 +170,11 @@ export const {
   useLazyGetAuthMeQuery,
   useGetUsersByIdQuery,
   useLazyGetUsersByIdQuery,
+  useGetPostsQuery,
+  useLazyGetPostsQuery,
   usePostPostsMutation,
   useGetPostsByIdQuery,
   useLazyGetPostsByIdQuery,
-  useGetPostsByAuthorByAuthorIdQuery,
-  useLazyGetPostsByAuthorByAuthorIdQuery,
+  usePutPostsByIdMutation,
+  useDeletePostsByIdMutation,
 } = injectedRtkApi;

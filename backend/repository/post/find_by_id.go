@@ -6,18 +6,20 @@ import (
 	"errors"
 	"fmt"
 
+	. "github.com/go-jet/jet/v2/postgres"
+
+	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
+	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
 	"github.com/noueii/no-frame-works/internal/modules/post/domain"
 )
 
 func (r *PostgresPostRepository) FindByID(ctx context.Context, id string) (*domain.Post, error) {
-	row := r.db.QueryRowContext(
-		ctx,
-		`SELECT id, title, content, author_id, created_at, updated_at FROM "post" WHERE id = $1`,
-		id,
-	)
+	stmt := SELECT(table.Post.AllColumns).
+		FROM(table.Post).
+		WHERE(table.Post.ID.EQ(String(id)))
 
-	var p domain.Post
-	err := row.Scan(&p.ID, &p.Title, &p.Content, &p.AuthorID, &p.CreatedAt, &p.UpdatedAt)
+	var dest model.Post
+	err := stmt.QueryContext(ctx, r.db, &dest)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -25,5 +27,5 @@ func (r *PostgresPostRepository) FindByID(ctx context.Context, id string) (*doma
 		return nil, fmt.Errorf("query post by id: %w", err)
 	}
 
-	return &p, nil
+	return toDomain(dest), nil
 }

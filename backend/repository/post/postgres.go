@@ -6,7 +6,7 @@ import (
 	postmod "github.com/noueii/no-frame-works/internal/modules/post"
 )
 
-// PostgresPostRepository implements postmod.PostRepository using PostgreSQL.
+// PostgresPostRepository implements postmod.PostRepository using PostgreSQL with go-jet.
 type PostgresPostRepository struct {
 	db *sql.DB
 }

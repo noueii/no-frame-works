@@ -3,6 +3,7 @@ package webserver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,6 +15,8 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/noueii/no-frame-works/config"
+	"github.com/noueii/no-frame-works/generated/oapi"
+	"github.com/noueii/no-frame-works/internal/webserver/handler"
 	"github.com/noueii/no-frame-works/internal/webserver/middleware"
 )
 
@@ -22,10 +25,8 @@ type Webserver struct {
 	serverAddr string
 }
 
-// RouteRegistrar is a function that registers routes on a chi.Router.
-type RouteRegistrar func(r chi.Router)
-
-func NewWebserver(app *config.App, routeRegistrars ...RouteRegistrar) *Webserver {
+func NewWebserver(app *config.App) *Webserver {
+	h := handler.NewHandler(app)
 	serverAddr := ":" + app.EnvVars().ServerPort()
 	encoderLevel := 1
 
@@ -41,10 +42,24 @@ func NewWebserver(app *config.App, routeRegistrars ...RouteRegistrar) *Webserver
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	r.Route("/api/v1", func(r chi.Router) {
-		for _, register := range routeRegistrars {
-			register(r)
-		}
+	// API routes — actor middleware skips /auth/* paths
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.NewActorMiddleware(app.IdentityClient()))
+		baseURL := "/api/v1"
+		strictHandler := oapi.NewStrictHandlerWithOptions(
+			h,
+			[]oapi.StrictMiddlewareFunc{handler.RequestContextMiddleware},
+			oapi.StrictHTTPServerOptions{
+				RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+				},
+				ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+					slog.Default().ErrorContext(r.Context(), "handler error", "error", err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				},
+			},
+		)
+		oapi.HandlerFromMuxWithBaseURL(strictHandler, r, baseURL)
 	})
 
 	return &Webserver{
@@ -104,4 +119,18 @@ func (ws *Webserver) Start() error {
 
 	slog.Default().Info("server shutdown complete")
 	return nil
+}
+
+func (ws *Webserver) PrintRoutes() {
+	err := chi.Walk(
+		ws.router,
+		func(method string, route string, _ http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+			slog.Default().
+				Info(fmt.Sprintf("[%s]: '%s' has %d middlewares\n", method, route, len(middlewares)))
+			return nil
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
 }

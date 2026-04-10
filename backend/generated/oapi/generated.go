@@ -19,61 +19,77 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// CreatePostRequest defines model for CreatePostRequest.
-type CreatePostRequest struct {
-	AuthorId openapi_types.UUID `json:"authorId"`
-	Content  string             `json:"content"`
-	Title    string             `json:"title"`
+// AuthUser defines model for AuthUser.
+type AuthUser struct {
+	Email openapi_types.Email `json:"email"`
+	Id    string              `json:"id"`
 }
 
-// CreateUserRequest defines model for CreateUserRequest.
-type CreateUserRequest struct {
-	Email openapi_types.Email `json:"email"`
-	Name  string              `json:"name"`
+// CreatePostRequest defines model for CreatePostRequest.
+type CreatePostRequest struct {
+	Content string `json:"content"`
+	Title   string `json:"title"`
+}
+
+// LoginRequest defines model for LoginRequest.
+type LoginRequest struct {
+	Email    openapi_types.Email `json:"email"`
+	Password string              `json:"password"`
 }
 
 // Post defines model for Post.
 type Post struct {
-	AuthorId   openapi_types.UUID `json:"authorId"`
-	AuthorName string             `json:"authorName"`
-	Content    string             `json:"content"`
-	Id         openapi_types.UUID `json:"id"`
-	Title      string             `json:"title"`
+	AuthorId string             `json:"authorId"`
+	Content  string             `json:"content"`
+	Id       openapi_types.UUID `json:"id"`
+	Title    string             `json:"title"`
+}
+
+// RegisterRequest defines model for RegisterRequest.
+type RegisterRequest struct {
+	Email    openapi_types.Email `json:"email"`
+	Password string              `json:"password"`
+}
+
+// SessionResponse defines model for SessionResponse.
+type SessionResponse struct {
+	SessionToken string `json:"sessionToken"`
+}
+
+// UpdatePostRequest defines model for UpdatePostRequest.
+type UpdatePostRequest struct {
+	Content string `json:"content"`
+	Title   string `json:"title"`
 }
 
 // User defines model for User.
 type User struct {
 	Email openapi_types.Email `json:"email"`
 	Id    openapi_types.UUID  `json:"id"`
-	Name  string              `json:"name"`
 }
 
-// Error400 defines model for Error400.
-type Error400 struct {
-	Data         *map[string]interface{} `json:"data"`
-	ErrorCode    string                  `json:"errorCode"`
-	ErrorMessage string                  `json:"errorMessage"`
+// Error defines model for Error.
+type Error struct {
+	Error string `json:"error"`
 }
 
-// Error404 defines model for Error404.
-type Error404 struct {
-	Data         *map[string]interface{} `json:"data"`
-	ErrorCode    string                  `json:"errorCode"`
-	ErrorMessage string                  `json:"errorMessage"`
+// GetPostsParams defines parameters for GetPosts.
+type GetPostsParams struct {
+	// AuthorId Filter posts by author ID
+	AuthorId *openapi_types.UUID `form:"authorId,omitempty" json:"authorId,omitempty"`
 }
 
-// Error500 defines model for Error500.
-type Error500 struct {
-	Data         *map[string]interface{} `json:"data"`
-	ErrorCode    string                  `json:"errorCode"`
-	ErrorMessage string                  `json:"errorMessage"`
-}
+// PostAuthLoginJSONRequestBody defines body for PostAuthLogin for application/json ContentType.
+type PostAuthLoginJSONRequestBody = LoginRequest
 
-// CreatePostJSONRequestBody defines body for CreatePost for application/json ContentType.
-type CreatePostJSONRequestBody = CreatePostRequest
+// PostAuthRegisterJSONRequestBody defines body for PostAuthRegister for application/json ContentType.
+type PostAuthRegisterJSONRequestBody = RegisterRequest
 
-// CreateUserJSONRequestBody defines body for CreateUser for application/json ContentType.
-type CreateUserJSONRequestBody = CreateUserRequest
+// PostCreatePostJSONRequestBody defines body for PostCreatePost for application/json ContentType.
+type PostCreatePostJSONRequestBody = CreatePostRequest
+
+// PutUpdatePostJSONRequestBody defines body for PutUpdatePost for application/json ContentType.
+type PutUpdatePostJSONRequestBody = UpdatePostRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -148,28 +164,47 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// CreatePostWithBody request with any body
-	CreatePostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostAuthLoginWithBody request with any body
+	PostAuthLoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreatePost(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostAuthLogin(ctx context.Context, body PostAuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListPostsByAuthor request
-	ListPostsByAuthor(ctx context.Context, authorId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostAuthLogout request
+	PostAuthLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAuthMe request
+	GetAuthMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostAuthRegisterWithBody request with any body
+	PostAuthRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostAuthRegister(ctx context.Context, body PostAuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPosts request
+	GetPosts(ctx context.Context, params *GetPostsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostCreatePostWithBody request with any body
+	PostCreatePostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostCreatePost(ctx context.Context, body PostCreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePost request
+	DeletePost(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPost request
 	GetPost(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateUserWithBody request with any body
-	CreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutUpdatePostWithBody request with any body
+	PutUpdatePostWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateUser(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutUpdatePost(ctx context.Context, id openapi_types.UUID, body PutUpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetUser request
 	GetUser(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) CreatePostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePostRequestWithBody(c.Server, contentType, body)
+func (c *Client) PostAuthLoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAuthLoginRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +215,8 @@ func (c *Client) CreatePostWithBody(ctx context.Context, contentType string, bod
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePost(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePostRequest(c.Server, body)
+func (c *Client) PostAuthLogin(ctx context.Context, body PostAuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAuthLoginRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -192,8 +227,92 @@ func (c *Client) CreatePost(ctx context.Context, body CreatePostJSONRequestBody,
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListPostsByAuthor(ctx context.Context, authorId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListPostsByAuthorRequest(c.Server, authorId)
+func (c *Client) PostAuthLogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAuthLogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAuthMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAuthMeRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostAuthRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAuthRegisterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostAuthRegister(ctx context.Context, body PostAuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAuthRegisterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPosts(ctx context.Context, params *GetPostsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPostsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostCreatePostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostCreatePostRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostCreatePost(ctx context.Context, body PostCreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostCreatePostRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePost(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePostRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -216,8 +335,8 @@ func (c *Client) GetPost(ctx context.Context, id openapi_types.UUID, reqEditors 
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateUserWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateUserRequestWithBody(c.Server, contentType, body)
+func (c *Client) PutUpdatePostWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutUpdatePostRequestWithBody(c.Server, id, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -228,8 +347,8 @@ func (c *Client) CreateUserWithBody(ctx context.Context, contentType string, bod
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateUser(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateUserRequest(c.Server, body)
+func (c *Client) PutUpdatePost(ctx context.Context, id openapi_types.UUID, body PutUpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutUpdatePostRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -252,19 +371,202 @@ func (c *Client) GetUser(ctx context.Context, id openapi_types.UUID, reqEditors 
 	return c.Client.Do(req)
 }
 
-// NewCreatePostRequest calls the generic CreatePost builder with application/json body
-func NewCreatePostRequest(server string, body CreatePostJSONRequestBody) (*http.Request, error) {
+// NewPostAuthLoginRequest calls the generic PostAuthLogin builder with application/json body
+func NewPostAuthLoginRequest(server string, body PostAuthLoginJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreatePostRequestWithBody(server, "application/json", bodyReader)
+	return NewPostAuthLoginRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewCreatePostRequestWithBody generates requests for CreatePost with any type of body
-func NewCreatePostRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostAuthLoginRequestWithBody generates requests for PostAuthLogin with any type of body
+func NewPostAuthLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostAuthLogoutRequest generates requests for PostAuthLogout
+func NewPostAuthLogoutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/logout")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAuthMeRequest generates requests for GetAuthMe
+func NewGetAuthMeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/me")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostAuthRegisterRequest calls the generic PostAuthRegister builder with application/json body
+func NewPostAuthRegisterRequest(server string, body PostAuthRegisterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostAuthRegisterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostAuthRegisterRequestWithBody generates requests for PostAuthRegister with any type of body
+func NewPostAuthRegisterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetPostsRequest generates requests for GetPosts
+func NewGetPostsRequest(server string, params *GetPostsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/posts")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.AuthorId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "authorId", *params.AuthorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostCreatePostRequest calls the generic PostCreatePost builder with application/json body
+func NewPostCreatePostRequest(server string, body PostCreatePostJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostCreatePostRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostCreatePostRequestWithBody generates requests for PostCreatePost with any type of body
+func NewPostCreatePostRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -292,13 +594,13 @@ func NewCreatePostRequestWithBody(server string, contentType string, body io.Rea
 	return req, nil
 }
 
-// NewListPostsByAuthorRequest generates requests for ListPostsByAuthor
-func NewListPostsByAuthorRequest(server string, authorId openapi_types.UUID) (*http.Request, error) {
+// NewDeletePostRequest generates requests for DeletePost
+func NewDeletePostRequest(server string, id openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "authorId", authorId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +610,7 @@ func NewListPostsByAuthorRequest(server string, authorId openapi_types.UUID) (*h
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/posts/by-author/%s", pathParam0)
+	operationPath := fmt.Sprintf("/posts/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -318,7 +620,7 @@ func NewListPostsByAuthorRequest(server string, authorId openapi_types.UUID) (*h
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -360,27 +662,34 @@ func NewGetPostRequest(server string, id openapi_types.UUID) (*http.Request, err
 	return req, nil
 }
 
-// NewCreateUserRequest calls the generic CreateUser builder with application/json body
-func NewCreateUserRequest(server string, body CreateUserJSONRequestBody) (*http.Request, error) {
+// NewPutUpdatePostRequest calls the generic PutUpdatePost builder with application/json body
+func NewPutUpdatePostRequest(server string, id openapi_types.UUID, body PutUpdatePostJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateUserRequestWithBody(server, "application/json", bodyReader)
+	return NewPutUpdatePostRequestWithBody(server, id, "application/json", bodyReader)
 }
 
-// NewCreateUserRequestWithBody generates requests for CreateUser with any type of body
-func NewCreateUserRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPutUpdatePostRequestWithBody generates requests for PutUpdatePost with any type of body
+func NewPutUpdatePostRequestWithBody(server string, id openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/users")
+	operationPath := fmt.Sprintf("/posts/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -390,7 +699,7 @@ func NewCreateUserRequestWithBody(server string, contentType string, body io.Rea
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -477,36 +786,55 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// CreatePostWithBodyWithResponse request with any body
-	CreatePostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostResponse, error)
+	// PostAuthLoginWithBodyWithResponse request with any body
+	PostAuthLoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostAuthLoginResponse, error)
 
-	CreatePostWithResponse(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostResponse, error)
+	PostAuthLoginWithResponse(ctx context.Context, body PostAuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*PostAuthLoginResponse, error)
 
-	// ListPostsByAuthorWithResponse request
-	ListPostsByAuthorWithResponse(ctx context.Context, authorId openapi_types.UUID, reqEditors ...RequestEditorFn) (*ListPostsByAuthorResponse, error)
+	// PostAuthLogoutWithResponse request
+	PostAuthLogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAuthLogoutResponse, error)
+
+	// GetAuthMeWithResponse request
+	GetAuthMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAuthMeResponse, error)
+
+	// PostAuthRegisterWithBodyWithResponse request with any body
+	PostAuthRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostAuthRegisterResponse, error)
+
+	PostAuthRegisterWithResponse(ctx context.Context, body PostAuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*PostAuthRegisterResponse, error)
+
+	// GetPostsWithResponse request
+	GetPostsWithResponse(ctx context.Context, params *GetPostsParams, reqEditors ...RequestEditorFn) (*GetPostsResponse, error)
+
+	// PostCreatePostWithBodyWithResponse request with any body
+	PostCreatePostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostCreatePostResponse, error)
+
+	PostCreatePostWithResponse(ctx context.Context, body PostCreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*PostCreatePostResponse, error)
+
+	// DeletePostWithResponse request
+	DeletePostWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeletePostResponse, error)
 
 	// GetPostWithResponse request
 	GetPostWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetPostResponse, error)
 
-	// CreateUserWithBodyWithResponse request with any body
-	CreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserResponse, error)
+	// PutUpdatePostWithBodyWithResponse request with any body
+	PutUpdatePostWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutUpdatePostResponse, error)
 
-	CreateUserWithResponse(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserResponse, error)
+	PutUpdatePostWithResponse(ctx context.Context, id openapi_types.UUID, body PutUpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*PutUpdatePostResponse, error)
 
 	// GetUserWithResponse request
 	GetUserWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUserResponse, error)
 }
 
-type CreatePostResponse struct {
+type PostAuthLoginResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *Post
-	JSON400      *Error400
-	JSON500      *Error500
+	JSON200      *SessionResponse
+	JSON400      *Error
+	JSON401      *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r CreatePostResponse) Status() string {
+func (r PostAuthLoginResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -514,22 +842,20 @@ func (r CreatePostResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r CreatePostResponse) StatusCode() int {
+func (r PostAuthLoginResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ListPostsByAuthorResponse struct {
+type PostAuthLogoutResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Post
-	JSON500      *Error500
 }
 
 // Status returns HTTPResponse.Status
-func (r ListPostsByAuthorResponse) Status() string {
+func (r PostAuthLogoutResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -537,7 +863,120 @@ func (r ListPostsByAuthorResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListPostsByAuthorResponse) StatusCode() int {
+func (r PostAuthLogoutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAuthMeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthUser
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAuthMeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAuthMeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostAuthRegisterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionResponse
+	JSON400      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PostAuthRegisterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostAuthRegisterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPostsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Post
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPostsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPostsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostCreatePostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Post
+	JSON400      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PostCreatePostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostCreatePostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeletePostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON404      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePostResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -548,8 +987,7 @@ type GetPostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *Post
-	JSON404      *Error404
-	JSON500      *Error500
+	JSON404      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -568,16 +1006,16 @@ func (r GetPostResponse) StatusCode() int {
 	return 0
 }
 
-type CreateUserResponse struct {
+type PutUpdatePostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *User
-	JSON400      *Error400
-	JSON500      *Error500
+	JSON200      *Post
+	JSON400      *Error
+	JSON404      *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r CreateUserResponse) Status() string {
+func (r PutUpdatePostResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -585,7 +1023,7 @@ func (r CreateUserResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r CreateUserResponse) StatusCode() int {
+func (r PutUpdatePostResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -596,8 +1034,7 @@ type GetUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *User
-	JSON404      *Error404
-	JSON500      *Error500
+	JSON404      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -616,30 +1053,91 @@ func (r GetUserResponse) StatusCode() int {
 	return 0
 }
 
-// CreatePostWithBodyWithResponse request with arbitrary body returning *CreatePostResponse
-func (c *ClientWithResponses) CreatePostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePostResponse, error) {
-	rsp, err := c.CreatePostWithBody(ctx, contentType, body, reqEditors...)
+// PostAuthLoginWithBodyWithResponse request with arbitrary body returning *PostAuthLoginResponse
+func (c *ClientWithResponses) PostAuthLoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostAuthLoginResponse, error) {
+	rsp, err := c.PostAuthLoginWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreatePostResponse(rsp)
+	return ParsePostAuthLoginResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreatePostWithResponse(ctx context.Context, body CreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePostResponse, error) {
-	rsp, err := c.CreatePost(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PostAuthLoginWithResponse(ctx context.Context, body PostAuthLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*PostAuthLoginResponse, error) {
+	rsp, err := c.PostAuthLogin(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreatePostResponse(rsp)
+	return ParsePostAuthLoginResponse(rsp)
 }
 
-// ListPostsByAuthorWithResponse request returning *ListPostsByAuthorResponse
-func (c *ClientWithResponses) ListPostsByAuthorWithResponse(ctx context.Context, authorId openapi_types.UUID, reqEditors ...RequestEditorFn) (*ListPostsByAuthorResponse, error) {
-	rsp, err := c.ListPostsByAuthor(ctx, authorId, reqEditors...)
+// PostAuthLogoutWithResponse request returning *PostAuthLogoutResponse
+func (c *ClientWithResponses) PostAuthLogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAuthLogoutResponse, error) {
+	rsp, err := c.PostAuthLogout(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListPostsByAuthorResponse(rsp)
+	return ParsePostAuthLogoutResponse(rsp)
+}
+
+// GetAuthMeWithResponse request returning *GetAuthMeResponse
+func (c *ClientWithResponses) GetAuthMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAuthMeResponse, error) {
+	rsp, err := c.GetAuthMe(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAuthMeResponse(rsp)
+}
+
+// PostAuthRegisterWithBodyWithResponse request with arbitrary body returning *PostAuthRegisterResponse
+func (c *ClientWithResponses) PostAuthRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostAuthRegisterResponse, error) {
+	rsp, err := c.PostAuthRegisterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostAuthRegisterResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostAuthRegisterWithResponse(ctx context.Context, body PostAuthRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*PostAuthRegisterResponse, error) {
+	rsp, err := c.PostAuthRegister(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostAuthRegisterResponse(rsp)
+}
+
+// GetPostsWithResponse request returning *GetPostsResponse
+func (c *ClientWithResponses) GetPostsWithResponse(ctx context.Context, params *GetPostsParams, reqEditors ...RequestEditorFn) (*GetPostsResponse, error) {
+	rsp, err := c.GetPosts(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPostsResponse(rsp)
+}
+
+// PostCreatePostWithBodyWithResponse request with arbitrary body returning *PostCreatePostResponse
+func (c *ClientWithResponses) PostCreatePostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostCreatePostResponse, error) {
+	rsp, err := c.PostCreatePostWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostCreatePostResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostCreatePostWithResponse(ctx context.Context, body PostCreatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*PostCreatePostResponse, error) {
+	rsp, err := c.PostCreatePost(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostCreatePostResponse(rsp)
+}
+
+// DeletePostWithResponse request returning *DeletePostResponse
+func (c *ClientWithResponses) DeletePostWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeletePostResponse, error) {
+	rsp, err := c.DeletePost(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePostResponse(rsp)
 }
 
 // GetPostWithResponse request returning *GetPostResponse
@@ -651,21 +1149,21 @@ func (c *ClientWithResponses) GetPostWithResponse(ctx context.Context, id openap
 	return ParseGetPostResponse(rsp)
 }
 
-// CreateUserWithBodyWithResponse request with arbitrary body returning *CreateUserResponse
-func (c *ClientWithResponses) CreateUserWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserResponse, error) {
-	rsp, err := c.CreateUserWithBody(ctx, contentType, body, reqEditors...)
+// PutUpdatePostWithBodyWithResponse request with arbitrary body returning *PutUpdatePostResponse
+func (c *ClientWithResponses) PutUpdatePostWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutUpdatePostResponse, error) {
+	rsp, err := c.PutUpdatePostWithBody(ctx, id, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreateUserResponse(rsp)
+	return ParsePutUpdatePostResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateUserWithResponse(ctx context.Context, body CreateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserResponse, error) {
-	rsp, err := c.CreateUser(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PutUpdatePostWithResponse(ctx context.Context, id openapi_types.UUID, body PutUpdatePostJSONRequestBody, reqEditors ...RequestEditorFn) (*PutUpdatePostResponse, error) {
+	rsp, err := c.PutUpdatePost(ctx, id, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreateUserResponse(rsp)
+	return ParsePutUpdatePostResponse(rsp)
 }
 
 // GetUserWithResponse request returning *GetUserResponse
@@ -677,15 +1175,163 @@ func (c *ClientWithResponses) GetUserWithResponse(ctx context.Context, id openap
 	return ParseGetUserResponse(rsp)
 }
 
-// ParseCreatePostResponse parses an HTTP response from a CreatePostWithResponse call
-func ParseCreatePostResponse(rsp *http.Response) (*CreatePostResponse, error) {
+// ParsePostAuthLoginResponse parses an HTTP response from a PostAuthLoginWithResponse call
+func ParsePostAuthLoginResponse(rsp *http.Response) (*PostAuthLoginResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CreatePostResponse{
+	response := &PostAuthLoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostAuthLogoutResponse parses an HTTP response from a PostAuthLogoutWithResponse call
+func ParsePostAuthLogoutResponse(rsp *http.Response) (*PostAuthLogoutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostAuthLogoutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetAuthMeResponse parses an HTTP response from a GetAuthMeWithResponse call
+func ParseGetAuthMeResponse(rsp *http.Response) (*GetAuthMeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAuthMeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthUser
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostAuthRegisterResponse parses an HTTP response from a PostAuthRegisterWithResponse call
+func ParsePostAuthRegisterResponse(rsp *http.Response) (*PostAuthRegisterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostAuthRegisterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPostsResponse parses an HTTP response from a GetPostsWithResponse call
+func ParseGetPostsResponse(rsp *http.Response) (*GetPostsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPostsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Post
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostCreatePostResponse parses an HTTP response from a PostCreatePostWithResponse call
+func ParsePostCreatePostResponse(rsp *http.Response) (*PostCreatePostResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostCreatePostResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -699,51 +1345,37 @@ func ParseCreatePostResponse(rsp *http.Response) (*CreatePostResponse, error) {
 		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest Error400
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Error500
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
 
 	}
 
 	return response, nil
 }
 
-// ParseListPostsByAuthorResponse parses an HTTP response from a ListPostsByAuthorWithResponse call
-func ParseListPostsByAuthorResponse(rsp *http.Response) (*ListPostsByAuthorResponse, error) {
+// ParseDeletePostResponse parses an HTTP response from a DeletePostWithResponse call
+func ParseDeletePostResponse(rsp *http.Response) (*DeletePostResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListPostsByAuthorResponse{
+	response := &DeletePostResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Post
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Error500
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
+		response.JSON404 = &dest
 
 	}
 
@@ -772,58 +1404,51 @@ func ParseGetPostResponse(rsp *http.Response) (*GetPostResponse, error) {
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Error404
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Error500
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
 
 	}
 
 	return response, nil
 }
 
-// ParseCreateUserResponse parses an HTTP response from a CreateUserWithResponse call
-func ParseCreateUserResponse(rsp *http.Response) (*CreateUserResponse, error) {
+// ParsePutUpdatePostResponse parses an HTTP response from a PutUpdatePostWithResponse call
+func ParsePutUpdatePostResponse(rsp *http.Response) (*PutUpdatePostResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CreateUserResponse{
+	response := &PutUpdatePostResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest User
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Post
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON201 = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest Error400
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON400 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Error500
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON500 = &dest
+		response.JSON404 = &dest
 
 	}
 
@@ -852,18 +1477,11 @@ func ParseGetUserResponse(rsp *http.Response) (*GetUserResponse, error) {
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Error404
+		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Error500
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
 
 	}
 
@@ -872,18 +1490,33 @@ func ParseGetUserResponse(rsp *http.Response) (*GetUserResponse, error) {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Login
+	// (POST /auth/login)
+	PostAuthLogin(w http.ResponseWriter, r *http.Request)
+	// Logout
+	// (POST /auth/logout)
+	PostAuthLogout(w http.ResponseWriter, r *http.Request)
+	// Get Current User
+	// (GET /auth/me)
+	GetAuthMe(w http.ResponseWriter, r *http.Request)
+	// Register
+	// (POST /auth/register)
+	PostAuthRegister(w http.ResponseWriter, r *http.Request)
+	// List Posts
+	// (GET /posts)
+	GetPosts(w http.ResponseWriter, r *http.Request, params GetPostsParams)
 	// Create Post
 	// (POST /posts)
-	CreatePost(w http.ResponseWriter, r *http.Request)
-	// List Posts by Author
-	// (GET /posts/by-author/{authorId})
-	ListPostsByAuthor(w http.ResponseWriter, r *http.Request, authorId openapi_types.UUID)
+	PostCreatePost(w http.ResponseWriter, r *http.Request)
+	// Delete Post
+	// (DELETE /posts/{id})
+	DeletePost(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 	// Get Post
 	// (GET /posts/{id})
 	GetPost(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
-	// Create User
-	// (POST /users)
-	CreateUser(w http.ResponseWriter, r *http.Request)
+	// Update Post
+	// (PUT /posts/{id})
+	PutUpdatePost(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 	// Get User
 	// (GET /users/{id})
 	GetUser(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
@@ -893,15 +1526,45 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
-// Create Post
-// (POST /posts)
-func (_ Unimplemented) CreatePost(w http.ResponseWriter, r *http.Request) {
+// Login
+// (POST /auth/login)
+func (_ Unimplemented) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// List Posts by Author
-// (GET /posts/by-author/{authorId})
-func (_ Unimplemented) ListPostsByAuthor(w http.ResponseWriter, r *http.Request, authorId openapi_types.UUID) {
+// Logout
+// (POST /auth/logout)
+func (_ Unimplemented) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get Current User
+// (GET /auth/me)
+func (_ Unimplemented) GetAuthMe(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Register
+// (POST /auth/register)
+func (_ Unimplemented) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List Posts
+// (GET /posts)
+func (_ Unimplemented) GetPosts(w http.ResponseWriter, r *http.Request, params GetPostsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create Post
+// (POST /posts)
+func (_ Unimplemented) PostCreatePost(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete Post
+// (DELETE /posts/{id})
+func (_ Unimplemented) DeletePost(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -911,9 +1574,9 @@ func (_ Unimplemented) GetPost(w http.ResponseWriter, r *http.Request, id openap
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Create User
-// (POST /users)
-func (_ Unimplemented) CreateUser(w http.ResponseWriter, r *http.Request) {
+// Update Post
+// (PUT /posts/{id})
+func (_ Unimplemented) PutUpdatePost(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -932,11 +1595,11 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// CreatePost operation middleware
-func (siw *ServerInterfaceWrapper) CreatePost(w http.ResponseWriter, r *http.Request) {
+// PostAuthLogin operation middleware
+func (siw *ServerInterfaceWrapper) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreatePost(w, r)
+		siw.Handler.PostAuthLogin(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -946,22 +1609,105 @@ func (siw *ServerInterfaceWrapper) CreatePost(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
-// ListPostsByAuthor operation middleware
-func (siw *ServerInterfaceWrapper) ListPostsByAuthor(w http.ResponseWriter, r *http.Request) {
+// PostAuthLogout operation middleware
+func (siw *ServerInterfaceWrapper) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostAuthLogout(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAuthMe operation middleware
+func (siw *ServerInterfaceWrapper) GetAuthMe(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAuthMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostAuthRegister operation middleware
+func (siw *ServerInterfaceWrapper) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostAuthRegister(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPosts operation middleware
+func (siw *ServerInterfaceWrapper) GetPosts(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
-	// ------------- Path parameter "authorId" -------------
-	var authorId openapi_types.UUID
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPostsParams
 
-	err = runtime.BindStyledParameterWithOptions("simple", "authorId", chi.URLParam(r, "authorId"), &authorId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	// ------------- Optional query parameter "authorId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "authorId", r.URL.Query(), &params.AuthorId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "authorId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListPostsByAuthor(w, r, authorId)
+		siw.Handler.GetPosts(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostCreatePost operation middleware
+func (siw *ServerInterfaceWrapper) PostCreatePost(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostCreatePost(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePost operation middleware
+func (siw *ServerInterfaceWrapper) DeletePost(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePost(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -996,11 +1742,22 @@ func (siw *ServerInterfaceWrapper) GetPost(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r)
 }
 
-// CreateUser operation middleware
-func (siw *ServerInterfaceWrapper) CreateUser(w http.ResponseWriter, r *http.Request) {
+// PutUpdatePost operation middleware
+func (siw *ServerInterfaceWrapper) PutUpdatePost(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateUser(w, r)
+		siw.Handler.PutUpdatePost(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1149,16 +1906,31 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/posts", wrapper.CreatePost)
+		r.Post(options.BaseURL+"/auth/login", wrapper.PostAuthLogin)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/posts/by-author/{authorId}", wrapper.ListPostsByAuthor)
+		r.Post(options.BaseURL+"/auth/logout", wrapper.PostAuthLogout)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/me", wrapper.GetAuthMe)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/register", wrapper.PostAuthRegister)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/posts", wrapper.GetPosts)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/posts", wrapper.PostCreatePost)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/posts/{id}", wrapper.DeletePost)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/posts/{id}", wrapper.GetPost)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/users", wrapper.CreateUser)
+		r.Put(options.BaseURL+"/posts/{id}", wrapper.PutUpdatePost)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users/{id}", wrapper.GetUser)
@@ -1167,81 +1939,177 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
-type Error400JSONResponse struct {
-	Data         *map[string]interface{} `json:"data"`
-	ErrorCode    string                  `json:"errorCode"`
-	ErrorMessage string                  `json:"errorMessage"`
+type ErrorJSONResponse struct {
+	Error string `json:"error"`
 }
 
-type Error404JSONResponse struct {
-	Data         *map[string]interface{} `json:"data"`
-	ErrorCode    string                  `json:"errorCode"`
-	ErrorMessage string                  `json:"errorMessage"`
+type PostAuthLoginRequestObject struct {
+	Body *PostAuthLoginJSONRequestBody
 }
 
-type Error500JSONResponse struct {
-	Data         *map[string]interface{} `json:"data"`
-	ErrorCode    string                  `json:"errorCode"`
-	ErrorMessage string                  `json:"errorMessage"`
+type PostAuthLoginResponseObject interface {
+	VisitPostAuthLoginResponse(w http.ResponseWriter) error
 }
 
-type CreatePostRequestObject struct {
-	Body *CreatePostJSONRequestBody
-}
+type PostAuthLogin200JSONResponse SessionResponse
 
-type CreatePostResponseObject interface {
-	VisitCreatePostResponse(w http.ResponseWriter) error
-}
-
-type CreatePost201JSONResponse Post
-
-func (response CreatePost201JSONResponse) VisitCreatePostResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type CreatePost400JSONResponse struct{ Error400JSONResponse }
-
-func (response CreatePost400JSONResponse) VisitCreatePostResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type CreatePost500JSONResponse struct{ Error500JSONResponse }
-
-func (response CreatePost500JSONResponse) VisitCreatePostResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type ListPostsByAuthorRequestObject struct {
-	AuthorId openapi_types.UUID `json:"authorId"`
-}
-
-type ListPostsByAuthorResponseObject interface {
-	VisitListPostsByAuthorResponse(w http.ResponseWriter) error
-}
-
-type ListPostsByAuthor200JSONResponse []Post
-
-func (response ListPostsByAuthor200JSONResponse) VisitListPostsByAuthorResponse(w http.ResponseWriter) error {
+func (response PostAuthLogin200JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type ListPostsByAuthor500JSONResponse struct{ Error500JSONResponse }
+type PostAuthLogin400JSONResponse struct{ ErrorJSONResponse }
 
-func (response ListPostsByAuthor500JSONResponse) VisitListPostsByAuthorResponse(w http.ResponseWriter) error {
+func (response PostAuthLogin400JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostAuthLogin401JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PostAuthLogin401JSONResponse) VisitPostAuthLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostAuthLogoutRequestObject struct {
+}
+
+type PostAuthLogoutResponseObject interface {
+	VisitPostAuthLogoutResponse(w http.ResponseWriter) error
+}
+
+type PostAuthLogout204Response struct {
+}
+
+func (response PostAuthLogout204Response) VisitPostAuthLogoutResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type GetAuthMeRequestObject struct {
+}
+
+type GetAuthMeResponseObject interface {
+	VisitGetAuthMeResponse(w http.ResponseWriter) error
+}
+
+type GetAuthMe200JSONResponse AuthUser
+
+func (response GetAuthMe200JSONResponse) VisitGetAuthMeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAuthMe401JSONResponse struct{ ErrorJSONResponse }
+
+func (response GetAuthMe401JSONResponse) VisitGetAuthMeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostAuthRegisterRequestObject struct {
+	Body *PostAuthRegisterJSONRequestBody
+}
+
+type PostAuthRegisterResponseObject interface {
+	VisitPostAuthRegisterResponse(w http.ResponseWriter) error
+}
+
+type PostAuthRegister200JSONResponse SessionResponse
+
+func (response PostAuthRegister200JSONResponse) VisitPostAuthRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostAuthRegister400JSONResponse struct{ ErrorJSONResponse }
+
+func (response PostAuthRegister400JSONResponse) VisitPostAuthRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetPostsRequestObject struct {
+	Params GetPostsParams
+}
+
+type GetPostsResponseObject interface {
+	VisitGetPostsResponse(w http.ResponseWriter) error
+}
+
+type GetPosts200JSONResponse []Post
+
+func (response GetPosts200JSONResponse) VisitGetPostsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostCreatePostRequestObject struct {
+	Body *PostCreatePostJSONRequestBody
+}
+
+type PostCreatePostResponseObject interface {
+	VisitPostCreatePostResponse(w http.ResponseWriter) error
+}
+
+type PostCreatePost201JSONResponse Post
+
+func (response PostCreatePost201JSONResponse) VisitPostCreatePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostCreatePost400JSONResponse struct{ ErrorJSONResponse }
+
+func (response PostCreatePost400JSONResponse) VisitPostCreatePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeletePostRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeletePostResponseObject interface {
+	VisitDeletePostResponse(w http.ResponseWriter) error
+}
+
+type DeletePost204Response struct {
+}
+
+func (response DeletePost204Response) VisitDeletePostResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeletePost404JSONResponse struct{ ErrorJSONResponse }
+
+func (response DeletePost404JSONResponse) VisitDeletePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1263,7 +2131,7 @@ func (response GetPost200JSONResponse) VisitGetPostResponse(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetPost404JSONResponse struct{ Error404JSONResponse }
+type GetPost404JSONResponse struct{ ErrorJSONResponse }
 
 func (response GetPost404JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1272,46 +2140,40 @@ func (response GetPost404JSONResponse) VisitGetPostResponse(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetPost500JSONResponse struct{ Error500JSONResponse }
+type PutUpdatePostRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PutUpdatePostJSONRequestBody
+}
 
-func (response GetPost500JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
+type PutUpdatePostResponseObject interface {
+	VisitPutUpdatePostResponse(w http.ResponseWriter) error
+}
+
+type PutUpdatePost200JSONResponse Post
+
+func (response PutUpdatePost200JSONResponse) VisitPutUpdatePostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
+	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type CreateUserRequestObject struct {
-	Body *CreateUserJSONRequestBody
-}
+type PutUpdatePost400JSONResponse struct{ ErrorJSONResponse }
 
-type CreateUserResponseObject interface {
-	VisitCreateUserResponse(w http.ResponseWriter) error
-}
-
-type CreateUser201JSONResponse User
-
-func (response CreateUser201JSONResponse) VisitCreateUserResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type CreateUser400JSONResponse struct{ Error400JSONResponse }
-
-func (response CreateUser400JSONResponse) VisitCreateUserResponse(w http.ResponseWriter) error {
+func (response PutUpdatePost400JSONResponse) VisitPutUpdatePostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type CreateUser500JSONResponse struct{ Error500JSONResponse }
+type PutUpdatePost404JSONResponse struct {
+	Error string `json:"error"`
+}
 
-func (response CreateUser500JSONResponse) VisitCreateUserResponse(w http.ResponseWriter) error {
+func (response PutUpdatePost404JSONResponse) VisitPutUpdatePostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1333,7 +2195,7 @@ func (response GetUser200JSONResponse) VisitGetUserResponse(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetUser404JSONResponse struct{ Error404JSONResponse }
+type GetUser404JSONResponse struct{ ErrorJSONResponse }
 
 func (response GetUser404JSONResponse) VisitGetUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1342,29 +2204,35 @@ func (response GetUser404JSONResponse) VisitGetUserResponse(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetUser500JSONResponse struct{ Error500JSONResponse }
-
-func (response GetUser500JSONResponse) VisitGetUserResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Login
+	// (POST /auth/login)
+	PostAuthLogin(ctx context.Context, request PostAuthLoginRequestObject) (PostAuthLoginResponseObject, error)
+	// Logout
+	// (POST /auth/logout)
+	PostAuthLogout(ctx context.Context, request PostAuthLogoutRequestObject) (PostAuthLogoutResponseObject, error)
+	// Get Current User
+	// (GET /auth/me)
+	GetAuthMe(ctx context.Context, request GetAuthMeRequestObject) (GetAuthMeResponseObject, error)
+	// Register
+	// (POST /auth/register)
+	PostAuthRegister(ctx context.Context, request PostAuthRegisterRequestObject) (PostAuthRegisterResponseObject, error)
+	// List Posts
+	// (GET /posts)
+	GetPosts(ctx context.Context, request GetPostsRequestObject) (GetPostsResponseObject, error)
 	// Create Post
 	// (POST /posts)
-	CreatePost(ctx context.Context, request CreatePostRequestObject) (CreatePostResponseObject, error)
-	// List Posts by Author
-	// (GET /posts/by-author/{authorId})
-	ListPostsByAuthor(ctx context.Context, request ListPostsByAuthorRequestObject) (ListPostsByAuthorResponseObject, error)
+	PostCreatePost(ctx context.Context, request PostCreatePostRequestObject) (PostCreatePostResponseObject, error)
+	// Delete Post
+	// (DELETE /posts/{id})
+	DeletePost(ctx context.Context, request DeletePostRequestObject) (DeletePostResponseObject, error)
 	// Get Post
 	// (GET /posts/{id})
 	GetPost(ctx context.Context, request GetPostRequestObject) (GetPostResponseObject, error)
-	// Create User
-	// (POST /users)
-	CreateUser(ctx context.Context, request CreateUserRequestObject) (CreateUserResponseObject, error)
+	// Update Post
+	// (PUT /posts/{id})
+	PutUpdatePost(ctx context.Context, request PutUpdatePostRequestObject) (PutUpdatePostResponseObject, error)
 	// Get User
 	// (GET /users/{id})
 	GetUser(ctx context.Context, request GetUserRequestObject) (GetUserResponseObject, error)
@@ -1399,11 +2267,11 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
-// CreatePost operation middleware
-func (sh *strictHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	var request CreatePostRequestObject
+// PostAuthLogin operation middleware
+func (sh *strictHandler) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
+	var request PostAuthLoginRequestObject
 
-	var body CreatePostJSONRequestBody
+	var body PostAuthLoginJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1411,18 +2279,18 @@ func (sh *strictHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CreatePost(ctx, request.(CreatePostRequestObject))
+		return sh.ssi.PostAuthLogin(ctx, request.(PostAuthLoginRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreatePost")
+		handler = middleware(handler, "PostAuthLogin")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CreatePostResponseObject); ok {
-		if err := validResponse.VisitCreatePostResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostAuthLoginResponseObject); ok {
+		if err := validResponse.VisitPostAuthLoginResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1430,25 +2298,161 @@ func (sh *strictHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ListPostsByAuthor operation middleware
-func (sh *strictHandler) ListPostsByAuthor(w http.ResponseWriter, r *http.Request, authorId openapi_types.UUID) {
-	var request ListPostsByAuthorRequestObject
-
-	request.AuthorId = authorId
+// PostAuthLogout operation middleware
+func (sh *strictHandler) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
+	var request PostAuthLogoutRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListPostsByAuthor(ctx, request.(ListPostsByAuthorRequestObject))
+		return sh.ssi.PostAuthLogout(ctx, request.(PostAuthLogoutRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListPostsByAuthor")
+		handler = middleware(handler, "PostAuthLogout")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListPostsByAuthorResponseObject); ok {
-		if err := validResponse.VisitListPostsByAuthorResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostAuthLogoutResponseObject); ok {
+		if err := validResponse.VisitPostAuthLogoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAuthMe operation middleware
+func (sh *strictHandler) GetAuthMe(w http.ResponseWriter, r *http.Request) {
+	var request GetAuthMeRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAuthMe(ctx, request.(GetAuthMeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAuthMe")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAuthMeResponseObject); ok {
+		if err := validResponse.VisitGetAuthMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostAuthRegister operation middleware
+func (sh *strictHandler) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
+	var request PostAuthRegisterRequestObject
+
+	var body PostAuthRegisterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostAuthRegister(ctx, request.(PostAuthRegisterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostAuthRegister")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostAuthRegisterResponseObject); ok {
+		if err := validResponse.VisitPostAuthRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPosts operation middleware
+func (sh *strictHandler) GetPosts(w http.ResponseWriter, r *http.Request, params GetPostsParams) {
+	var request GetPostsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPosts(ctx, request.(GetPostsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPosts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPostsResponseObject); ok {
+		if err := validResponse.VisitGetPostsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostCreatePost operation middleware
+func (sh *strictHandler) PostCreatePost(w http.ResponseWriter, r *http.Request) {
+	var request PostCreatePostRequestObject
+
+	var body PostCreatePostJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostCreatePost(ctx, request.(PostCreatePostRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostCreatePost")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostCreatePostResponseObject); ok {
+		if err := validResponse.VisitPostCreatePostResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeletePost operation middleware
+func (sh *strictHandler) DeletePost(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeletePostRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeletePost(ctx, request.(DeletePostRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeletePost")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeletePostResponseObject); ok {
+		if err := validResponse.VisitDeletePostResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1482,11 +2486,13 @@ func (sh *strictHandler) GetPost(w http.ResponseWriter, r *http.Request, id open
 	}
 }
 
-// CreateUser operation middleware
-func (sh *strictHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var request CreateUserRequestObject
+// PutUpdatePost operation middleware
+func (sh *strictHandler) PutUpdatePost(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request PutUpdatePostRequestObject
 
-	var body CreateUserJSONRequestBody
+	request.Id = id
+
+	var body PutUpdatePostJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1494,18 +2500,18 @@ func (sh *strictHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateUser(ctx, request.(CreateUserRequestObject))
+		return sh.ssi.PutUpdatePost(ctx, request.(PutUpdatePostRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreateUser")
+		handler = middleware(handler, "PutUpdatePost")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CreateUserResponseObject); ok {
-		if err := validResponse.VisitCreateUserResponse(w); err != nil {
+	} else if validResponse, ok := response.(PutUpdatePostResponseObject); ok {
+		if err := validResponse.VisitPutUpdatePostResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

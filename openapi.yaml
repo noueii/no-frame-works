@@ -107,6 +107,29 @@ paths:
           $ref: '#/components/responses/Error'
 
   /posts:
+    get:
+      operationId: get-posts
+      summary: List Posts
+      description: List posts, optionally filtered by author
+      tags:
+        - posts
+      parameters:
+        - name: authorId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter posts by author ID
+      responses:
+        '200':
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
     post:
       operationId: post-create-post
       summary: Create Post
@@ -152,30 +175,55 @@ paths:
                 $ref: '#/components/schemas/Post'
         '404':
           $ref: '#/components/responses/Error'
-
-  /posts/by-author/{authorId}:
-    get:
-      operationId: get-posts-by-author
-      summary: List Posts by Author
-      description: List all posts by a given author
+    put:
+      operationId: put-update-post
+      summary: Update Post
+      description: Update a post (owner or admin only)
       tags:
         - posts
       parameters:
-        - name: authorId
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostRequest'
+      responses:
+        '200':
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: delete-post
+      summary: Delete Post
+      description: Delete a post (owner or admin only)
+      tags:
+        - posts
+      parameters:
+        - name: id
           in: path
           required: true
           schema:
             type: string
             format: uuid
       responses:
-        '200':
-          description: Posts found
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Post'
+        '204':
+          description: Post deleted
+        '404':
+          $ref: '#/components/responses/Error'
+
 
 components:
   schemas:
@@ -235,6 +283,17 @@ components:
       required:
         - id
         - email
+
+    UpdatePostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+      required:
+        - title
+        - content
 
     CreatePostRequest:
       type: object

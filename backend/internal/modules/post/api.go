@@ -6,6 +6,9 @@ import "context"
 type PostAPI interface {
 	CreatePost(ctx context.Context, req CreatePostRequest) (PostView, error)
 	GetPost(ctx context.Context, req GetPostRequest) (PostView, error)
+	UpdatePost(ctx context.Context, req UpdatePostRequest) (PostView, error)
+	DeletePost(ctx context.Context, req DeletePostRequest) error
+	ListAllPosts(ctx context.Context) ([]PostView, error)
 	ListPosts(ctx context.Context, req ListPostsRequest) ([]PostView, error)
 }
 
@@ -74,4 +77,36 @@ func (r ListPostsRequest) Validate() error {
 
 func (r ListPostsRequest) Permission() Permission {
 	return PermPostList
+}
+
+// UpdatePostRequest is the request to update a post.
+type UpdatePostRequest struct {
+	ID      string
+	Title   string
+	Content string
+}
+
+func (r UpdatePostRequest) Validate() error {
+	if r.ID == "" {
+		return ErrIDRequired
+	}
+	if r.Title == "" {
+		return ErrTitleRequired
+	}
+	if r.Content == "" {
+		return ErrContentRequired
+	}
+	return nil
+}
+
+// DeletePostRequest is the request to delete a post.
+type DeletePostRequest struct {
+	ID string
+}
+
+func (r DeletePostRequest) Validate() error {
+	if r.ID == "" {
+		return ErrIDRequired
+	}
+	return nil
 }

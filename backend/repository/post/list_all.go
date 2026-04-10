@@ -11,19 +11,15 @@ import (
 	"github.com/noueii/no-frame-works/internal/modules/post/domain"
 )
 
-func (r *PostgresPostRepository) ListByAuthor(
-	ctx context.Context,
-	authorID string,
-) ([]domain.Post, error) {
+func (r *PostgresPostRepository) ListAll(ctx context.Context) ([]domain.Post, error) {
 	stmt := SELECT(table.Post.AllColumns).
 		FROM(table.Post).
-		WHERE(table.Post.AuthorID.EQ(String(authorID))).
 		ORDER_BY(table.Post.CreatedAt.DESC())
 
 	var dest []model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if err != nil {
-		return nil, fmt.Errorf("query posts by author: %w", err)
+		return nil, fmt.Errorf("query all posts: %w", err)
 	}
 
 	posts := make([]domain.Post, len(dest))

@@ -98,21 +98,22 @@ paths:
           $ref: '../shared.yaml#/components/responses/Error404'
         '500':
           $ref: '../shared.yaml#/components/responses/Error500'
-  /posts/by-author/{authorId}:
+  /posts:
     get:
-      operationId: list-posts-by-author
-      summary: List Posts by Author
-      description: Lists all posts by a given author
+      operationId: list-posts
+      summary: List Posts
+      description: List posts, optionally filtered by author
       parameters:
         - name: authorId
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
             format: uuid
+          description: Filter posts by author ID
       responses:
         '200':
-          description: Posts found
+          description: Posts
           content:
             application/json:
               schema:
