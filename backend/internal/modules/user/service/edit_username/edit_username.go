@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/noueii/no-frame-works/internal/modules/user"
+	"github.com/noueii/no-frame-works/internal/modules/user/domain"
 )
 
 // Execute changes a user's username.
@@ -14,7 +15,7 @@ func Execute(
 	req user.EditUsernameRequest,
 ) (user.UserView, error) {
 	if err := req.Validate(); err != nil {
-		return user.UserView{}, fmt.Errorf("validation failed: %w", err)
+		return user.UserView{}, err
 	}
 
 	existing, err := repo.FindByID(ctx, req.UserID)
@@ -22,7 +23,7 @@ func Execute(
 		return user.UserView{}, fmt.Errorf("failed to find user: %w", err)
 	}
 	if existing == nil {
-		return user.UserView{}, user.ErrUserNotFound
+		return user.UserView{}, domain.ErrUserNotFound
 	}
 
 	taken, err := repo.FindByUsername(ctx, req.Username)
@@ -30,12 +31,13 @@ func Execute(
 		return user.UserView{}, fmt.Errorf("failed to check username: %w", err)
 	}
 	if taken != nil && taken.ID != req.UserID {
-		return user.UserView{}, user.ErrUsernameTaken
+		return user.UserView{}, domain.ErrUsernameTaken
 	}
 
-	updated, err := repo.UpdateUsername(ctx, req.UserID, req.Username)
+	existing.Username = req.Username
+	updated, err := repo.Update(ctx, *existing)
 	if err != nil {
-		return user.UserView{}, fmt.Errorf("failed to update username: %w", err)
+		return user.UserView{}, fmt.Errorf("failed to update user: %w", err)
 	}
 
 	return user.UserView{
