@@ -7,18 +7,18 @@ import (
 	"github.com/noueii/no-frame-works/internal/modules/post/domain"
 )
 
-// PostAPI is the public contract for the post module.
-type PostAPI interface {
-	CreatePost(ctx context.Context, req CreatePostRequest) (*PostView, error)
-	GetPost(ctx context.Context, req GetPostRequest) (*PostView, error)
-	UpdatePost(ctx context.Context, req UpdatePostRequest) (*PostView, error)
+// API is the public contract for the post module.
+type API interface {
+	CreatePost(ctx context.Context, req CreatePostRequest) (*View, error)
+	GetPost(ctx context.Context, req GetPostRequest) (*View, error)
+	UpdatePost(ctx context.Context, req UpdatePostRequest) (*View, error)
 	DeletePost(ctx context.Context, req DeletePostRequest) error
-	ListAllPosts(ctx context.Context) ([]PostView, error)
-	ListPosts(ctx context.Context, req ListPostsRequest) ([]PostView, error)
+	ListAllPosts(ctx context.Context) ([]View, error)
+	ListPosts(ctx context.Context, req ListPostsRequest) ([]View, error)
 }
 
-// PostView is the exported type that external consumers see.
-type PostView struct {
+// View is the exported type that external consumers see.
+type View struct {
 	ID       string
 	Title    string
 	Content  string
@@ -46,7 +46,7 @@ func (r CreatePostRequest) Validate() error {
 }
 
 func (r CreatePostRequest) CheckPermission(ctx context.Context) error {
-	a := actor.ActorFrom(ctx)
+	a := actor.From(ctx)
 	if a == nil {
 		return ErrUnauthorized
 	}
@@ -66,7 +66,7 @@ func (r GetPostRequest) Validate() error {
 }
 
 func (r GetPostRequest) CheckPermission(ctx context.Context) error {
-	a := actor.ActorFrom(ctx)
+	a := actor.From(ctx)
 	if a == nil {
 		return ErrUnauthorized
 	}
@@ -86,7 +86,7 @@ func (r ListPostsRequest) Validate() error {
 }
 
 func (r ListPostsRequest) CheckPermission(ctx context.Context) error {
-	a := actor.ActorFrom(ctx)
+	a := actor.From(ctx)
 	if a == nil {
 		return ErrUnauthorized
 	}
@@ -114,7 +114,7 @@ func (r UpdatePostRequest) Validate() error {
 }
 
 func (r UpdatePostRequest) CheckPermission(ctx context.Context, post *domain.Post) error {
-	a := actor.ActorFrom(ctx)
+	a := actor.From(ctx)
 	if a == nil {
 		return ErrUnauthorized
 	}
@@ -137,7 +137,7 @@ func (r DeletePostRequest) Validate() error {
 }
 
 func (r DeletePostRequest) CheckPermission(ctx context.Context, post *domain.Post) error {
-	a := actor.ActorFrom(ctx)
+	a := actor.From(ctx)
 	if a == nil {
 		return ErrUnauthorized
 	}

@@ -6,8 +6,8 @@ import (
 	"github.com/noueii/no-frame-works/internal/modules/post/domain"
 )
 
-// PostRepository defines the data access contract for the post module.
-type PostRepository interface {
+// Repository defines the data access contract for the post module.
+type Repository interface {
 	FindByID(ctx context.Context, id string) (*domain.Post, error)
 	ListAll(ctx context.Context) ([]domain.Post, error)
 	ListByAuthor(ctx context.Context, authorID string) ([]domain.Post, error)

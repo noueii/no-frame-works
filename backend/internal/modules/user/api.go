@@ -6,20 +6,25 @@ import (
 	"github.com/noueii/no-frame-works/internal/core/actor"
 )
 
-// UserAPI is the public contract for the user module.
-type UserAPI interface {
-	EditUsername(ctx context.Context, req EditUsernameRequest) (*UserView, error)
+// API is the public contract for the user module.
+type API interface {
+	EditUsername(ctx context.Context, req EditUsernameRequest) (*View, error)
 }
 
 // Permission is a string-based permission identifier.
 type Permission string
 
-// UserView is the exported type that external consumers see.
-type UserView struct {
+// View is the exported type that external consumers see.
+type View struct {
 	ID       string
 	Username string
 	Email    string
 }
+
+const (
+	minUsernameLength = 3
+	maxUsernameLength = 32
+)
 
 // EditUsernameRequest is the request to change a user's username.
 type EditUsernameRequest struct {
@@ -34,17 +39,17 @@ func (r EditUsernameRequest) Validate() error {
 	if r.Username == "" {
 		return ErrUsernameRequired
 	}
-	if len(r.Username) < 3 {
+	if len(r.Username) < minUsernameLength {
 		return ErrUsernameTooShort
 	}
-	if len(r.Username) > 32 {
+	if len(r.Username) > maxUsernameLength {
 		return ErrUsernameTooLong
 	}
 	return nil
 }
 
 func (r EditUsernameRequest) CheckPermission(ctx context.Context) error {
-	a := actor.ActorFrom(ctx)
+	a := actor.From(ctx)
 	if a == nil {
 		return ErrUnauthorized
 	}

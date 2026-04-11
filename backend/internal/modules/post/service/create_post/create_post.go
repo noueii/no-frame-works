@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/internal/modules/post"
 	"github.com/noueii/no-frame-works/internal/modules/post/domain"
 )
@@ -11,9 +12,9 @@ import (
 // CreatePost creates a new post.
 func CreatePost(
 	ctx context.Context,
-	repo post.PostRepository,
+	repo post.Repository,
 	req post.CreatePostRequest,
-) (*post.PostView, error) {
+) (*post.View, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func CreatePost(
 		return nil, errors.Errorf("failed to create post: %w", err)
 	}
 
-	return &post.PostView{
+	return &post.View{
 		ID:       created.ID,
 		Title:    created.Title,
 		Content:  created.Content,

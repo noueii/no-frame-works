@@ -17,7 +17,10 @@ func NewKratosClient(client *ory.APIClient) *KratosClient {
 }
 
 func (c *KratosClient) Login(ctx context.Context, email, password string) (*SessionResult, error) {
-	flow, _, err := c.client.FrontendAPI.CreateNativeLoginFlow(ctx).Execute()
+	flow, resp, err := c.client.FrontendAPI.CreateNativeLoginFlow(ctx).Execute()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to create login flow: %w", err)
 	}
@@ -30,13 +33,16 @@ func (c *KratosClient) Login(ctx context.Context, email, password string) (*Sess
 		},
 	}
 
-	login, resp, err := c.client.FrontendAPI.UpdateLoginFlow(ctx).
+	login, loginResp, err := c.client.FrontendAPI.UpdateLoginFlow(ctx).
 		Flow(flow.GetId()).
 		UpdateLoginFlowBody(updateBody).
 		Execute()
+	if loginResp != nil && loginResp.Body != nil {
+		defer loginResp.Body.Close()
+	}
 	if err != nil {
-		if resp != nil &&
-			(resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized) {
+		if loginResp != nil &&
+			(loginResp.StatusCode == http.StatusBadRequest || loginResp.StatusCode == http.StatusUnauthorized) {
 			return nil, errors.Errorf("invalid credentials")
 		}
 		return nil, errors.Errorf("login failed: %w", err)
@@ -45,8 +51,14 @@ func (c *KratosClient) Login(ctx context.Context, email, password string) (*Sess
 	return &SessionResult{SessionToken: login.GetSessionToken()}, nil
 }
 
-func (c *KratosClient) Register(ctx context.Context, email, password string) (*SessionResult, error) {
-	flow, _, err := c.client.FrontendAPI.CreateNativeRegistrationFlow(ctx).Execute()
+func (c *KratosClient) Register(
+	ctx context.Context,
+	email, password string,
+) (*SessionResult, error) {
+	flow, resp, err := c.client.FrontendAPI.CreateNativeRegistrationFlow(ctx).Execute()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to create registration flow: %w", err)
 	}
@@ -63,12 +75,15 @@ func (c *KratosClient) Register(ctx context.Context, email, password string) (*S
 		},
 	}
 
-	reg, resp, err := c.client.FrontendAPI.UpdateRegistrationFlow(ctx).
+	reg, regResp, err := c.client.FrontendAPI.UpdateRegistrationFlow(ctx).
 		Flow(flow.GetId()).
 		UpdateRegistrationFlowBody(updateBody).
 		Execute()
+	if regResp != nil && regResp.Body != nil {
+		defer regResp.Body.Close()
+	}
 	if err != nil {
-		if resp != nil && resp.StatusCode == http.StatusBadRequest {
+		if regResp != nil && regResp.StatusCode == http.StatusBadRequest {
 			return nil, errors.Errorf("registration failed — check email/password requirements")
 		}
 		return nil, errors.Errorf("registration failed: %w", err)
@@ -78,13 +93,19 @@ func (c *KratosClient) Register(ctx context.Context, email, password string) (*S
 }
 
 func (c *KratosClient) Logout(ctx context.Context, sessionToken string) error {
-	session, _, err := c.client.FrontendAPI.ToSession(ctx).
+	session, sessionResp, err := c.client.FrontendAPI.ToSession(ctx).
 		XSessionToken(sessionToken).Execute()
+	if sessionResp != nil && sessionResp.Body != nil {
+		defer sessionResp.Body.Close()
+	}
 	if err != nil {
 		return nil // session already invalid
 	}
 
-	_, err = c.client.IdentityAPI.DisableSession(ctx, session.GetId()).Execute()
+	disableResp, err := c.client.IdentityAPI.DisableSession(ctx, session.GetId()).Execute()
+	if disableResp != nil && disableResp.Body != nil {
+		defer disableResp.Body.Close()
+	}
 	if err != nil {
 		return errors.Errorf("failed to disable session: %w", err)
 	}
@@ -97,13 +118,13 @@ func (c *KratosClient) identityToDetail(ident *ory.Identity) *UserDetail {
 		IdentityID: ident.GetId(),
 	}
 
-	traits, ok := ident.GetTraitsOk()
-	if !ok || traits == nil {
+	traits, hasTraits := ident.GetTraitsOk()
+	if !hasTraits || traits == nil {
 		return detail
 	}
 
-	traitsMap, ok := (*traits).(map[string]interface{})
-	if !ok {
+	traitsMap, isMap := (*traits).(map[string]interface{})
+	if !isMap {
 		return detail
 	}
 
@@ -118,8 +139,11 @@ func (c *KratosClient) identityToDetail(ident *ory.Identity) *UserDetail {
 }
 
 func (c *KratosClient) GetSession(ctx context.Context, sessionToken string) (*UserDetail, error) {
-	session, _, err := c.client.FrontendAPI.ToSession(ctx).
+	session, resp, err := c.client.FrontendAPI.ToSession(ctx).
 		XSessionToken(sessionToken).Execute()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, errors.Errorf("kratos session check failed: %w", err)
 	}
@@ -129,7 +153,10 @@ func (c *KratosClient) GetSession(ctx context.Context, sessionToken string) (*Us
 }
 
 func (c *KratosClient) GetIdentity(ctx context.Context, id string) (*UserDetail, error) {
-	ident, _, err := c.client.IdentityAPI.GetIdentity(ctx, id).Execute()
+	ident, resp, err := c.client.IdentityAPI.GetIdentity(ctx, id).Execute()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to get identity: %w", err)
 	}
@@ -137,20 +164,30 @@ func (c *KratosClient) GetIdentity(ctx context.Context, id string) (*UserDetail,
 	return c.identityToDetail(ident), nil
 }
 
-func (c *KratosClient) UpdateTraits(ctx context.Context, id string, traits map[string]interface{}) (*UserDetail, error) {
-	current, _, err := c.client.IdentityAPI.GetIdentity(ctx, id).Execute()
+func (c *KratosClient) UpdateTraits(
+	ctx context.Context,
+	id string,
+	traits map[string]interface{},
+) (*UserDetail, error) {
+	current, getResp, err := c.client.IdentityAPI.GetIdentity(ctx, id).Execute()
+	if getResp != nil && getResp.Body != nil {
+		defer getResp.Body.Close()
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to get identity for update: %w", err)
 	}
 
 	body := ory.UpdateIdentityBody{
 		SchemaId: current.GetSchemaId(),
-		State:    string(current.GetState()),
+		State:    current.GetState(),
 		Traits:   traits,
 	}
 
-	updated, _, err := c.client.IdentityAPI.UpdateIdentity(ctx, id).
+	updated, updateResp, err := c.client.IdentityAPI.UpdateIdentity(ctx, id).
 		UpdateIdentityBody(body).Execute()
+	if updateResp != nil && updateResp.Body != nil {
+		defer updateResp.Body.Close()
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to update identity traits: %w", err)
 	}
@@ -159,7 +196,10 @@ func (c *KratosClient) UpdateTraits(ctx context.Context, id string, traits map[s
 }
 
 func (c *KratosClient) ListIdentities(ctx context.Context) ([]UserDetail, error) {
-	identities, _, err := c.client.IdentityAPI.ListIdentities(ctx).Execute()
+	identities, resp, err := c.client.IdentityAPI.ListIdentities(ctx).Execute()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to list identities: %w", err)
 	}

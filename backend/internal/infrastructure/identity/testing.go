@@ -42,7 +42,11 @@ func (c *TestIdentityClient) GetIdentity(_ context.Context, _ string) (*UserDeta
 	return c.ResMeDetail, nil
 }
 
-func (c *TestIdentityClient) UpdateTraits(_ context.Context, _ string, _ map[string]interface{}) (*UserDetail, error) {
+func (c *TestIdentityClient) UpdateTraits(
+	_ context.Context,
+	_ string,
+	_ map[string]interface{},
+) (*UserDetail, error) {
 	if c.Err != nil {
 		return nil, c.Err
 	}

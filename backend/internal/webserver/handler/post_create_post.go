@@ -9,10 +9,15 @@ import (
 )
 
 // PostCreatePost handles POST /posts.
-func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePostRequestObject) (oapi.PostCreatePostResponseObject, error) {
-	a := actor.ActorFrom(ctx)
+func (h *Handler) PostCreatePost(
+	ctx context.Context,
+	request oapi.PostCreatePostRequestObject,
+) (oapi.PostCreatePostResponseObject, error) {
+	a := actor.From(ctx)
 	if a == nil {
-		return oapi.PostCreatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"}}, nil
+		return oapi.PostCreatePost400JSONResponse{
+			ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"},
+		}, nil
 	}
 
 	result, err := h.postAPI.CreatePost(ctx, post.CreatePostRequest{
@@ -21,7 +26,10 @@ func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePos
 		AuthorID: a.UserID().String(),
 	})
 	if err != nil {
-		return oapi.PostCreatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()}}, nil
+		//nolint:nilerr // error mapped to HTTP response
+		return oapi.PostCreatePost400JSONResponse{
+			ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()},
+		}, nil
 	}
 
 	return oapi.PostCreatePost201JSONResponse(toOAPIPost(*result)), nil

@@ -4,15 +4,16 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
 
 // GetPost retrieves a post by ID.
 func GetPost(
 	ctx context.Context,
-	repo post.PostRepository,
+	repo post.Repository,
 	req post.GetPostRequest,
-) (*post.PostView, error) {
+) (*post.View, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
@@ -30,7 +31,7 @@ func GetPost(
 		return nil, post.ErrPostNotFound
 	}
 
-	return &post.PostView{
+	return &post.View{
 		ID:       found.ID,
 		Title:    found.Title,
 		Content:  found.Content,

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/internal/modules/user/domain"
 )
 

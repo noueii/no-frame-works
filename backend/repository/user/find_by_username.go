@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/internal/modules/user/domain"
 )
 
@@ -19,5 +20,5 @@ func (r *Repository) FindByUsername(ctx context.Context, username string) (*doma
 		}
 	}
 
-	return nil, nil
+	return nil, nil //nolint:nilnil // not found returns nil
 }

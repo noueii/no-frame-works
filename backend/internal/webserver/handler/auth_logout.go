@@ -27,7 +27,7 @@ func (h *Handler) PostAuthLogout(
 		http.Redirect(w, r, h.app.EnvVars().AppLoginRedirectURL(), http.StatusFound)
 	}
 
-	return nil, nil
+	return nil, nil //nolint:nilnil // intentional: logout has no response body
 }
 
 func clearSessionCookie(w http.ResponseWriter) {

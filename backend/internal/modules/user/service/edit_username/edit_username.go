@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/internal/modules/user"
 	"github.com/noueii/no-frame-works/internal/modules/user/domain"
 )
@@ -11,9 +12,9 @@ import (
 // EditUsername changes a user's username.
 func EditUsername(
 	ctx context.Context,
-	repo user.UserRepository,
+	repo user.Repository,
 	req user.EditUsernameRequest,
-) (*user.UserView, error) {
+) (*user.View, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func EditUsername(
 		return nil, errors.Errorf("failed to update user: %w", err)
 	}
 
-	return &user.UserView{
+	return &user.View{
 		ID:       updated.ID,
 		Username: updated.Username,
 		Email:    updated.Email,

@@ -4,15 +4,16 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
 
 // ListPosts lists all posts by a given author.
 func ListPosts(
 	ctx context.Context,
-	repo post.PostRepository,
+	repo post.Repository,
 	req post.ListPostsRequest,
-) ([]post.PostView, error) {
+) ([]post.View, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
@@ -26,9 +27,9 @@ func ListPosts(
 		return nil, errors.Errorf("failed to list posts: %w", err)
 	}
 
-	views := make([]post.PostView, len(posts))
+	views := make([]post.View, len(posts))
 	for i, p := range posts {
-		views[i] = post.PostView{
+		views[i] = post.View{
 			ID:       p.ID,
 			Title:    p.Title,
 			Content:  p.Content,

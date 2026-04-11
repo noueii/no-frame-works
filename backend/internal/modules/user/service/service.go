@@ -7,13 +7,13 @@ import (
 	editusername "github.com/noueii/no-frame-works/internal/modules/user/service/edit_username"
 )
 
-// Service implements user.UserAPI.
+// Service implements user.API.
 type Service struct {
-	repo user.UserRepository
+	repo user.Repository
 }
 
 // New creates a new user service.
-func New(repo user.UserRepository) *Service {
+func New(repo user.Repository) *Service {
 	return &Service{
 		repo: repo,
 	}
@@ -22,6 +22,6 @@ func New(repo user.UserRepository) *Service {
 func (s *Service) EditUsername(
 	ctx context.Context,
 	req user.EditUsernameRequest,
-) (*user.UserView, error) {
+) (*user.View, error) {
 	return editusername.EditUsername(ctx, s.repo, req)
 }

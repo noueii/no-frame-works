@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
-	. "github.com/go-jet/jet/v2/postgres"
+	jet "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
@@ -15,9 +15,9 @@ func (r *PostgresPostRepository) ListByAuthor(
 	ctx context.Context,
 	authorID string,
 ) ([]domain.Post, error) {
-	stmt := SELECT(table.Post.AllColumns).
+	stmt := jet.SELECT(table.Post.AllColumns).
 		FROM(table.Post).
-		WHERE(table.Post.AuthorID.EQ(String(authorID))).
+		WHERE(table.Post.AuthorID.EQ(jet.String(authorID))).
 		ORDER_BY(table.Post.CreatedAt.DESC())
 
 	var dest []model.Post

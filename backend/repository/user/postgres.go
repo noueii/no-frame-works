@@ -9,6 +9,6 @@ type Repository struct {
 	identity identity.Client
 }
 
-func New(identity identity.Client) usermod.UserRepository {
+func New(identity identity.Client) usermod.Repository {
 	return &Repository{identity: identity}
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/DATA-DOG/go-txdb"
 	"github.com/go-errors/errors"
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 func NewDBProvider(env *EnvProvider) (*sql.DB, error) {

@@ -17,8 +17,8 @@ type Handler struct {
 
 	app      *config.App
 	identity identity.Client
-	postAPI  post.PostAPI
-	userAPI  user.UserAPI
+	postAPI  post.API
+	userAPI  user.API
 }
 
 func NewHandler(app *config.App) *Handler {

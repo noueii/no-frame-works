@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-errors/errors"
-	. "github.com/go-jet/jet/v2/postgres"
+	jet "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
@@ -19,8 +19,8 @@ func (r *PostgresPostRepository) Update(ctx context.Context, p domain.Post) (*do
 		table.Post.Content,
 		table.Post.UpdatedAt,
 	).MODEL(update).
-		SET(table.Post.UpdatedAt.SET(TimestampExp(RawTimestamp("now()")))).
-		WHERE(table.Post.ID.EQ(String(p.ID))).
+		SET(table.Post.UpdatedAt.SET(jet.TimestampExp(jet.RawTimestamp("now()")))).
+		WHERE(table.Post.ID.EQ(jet.String(p.ID))).
 		RETURNING(table.Post.AllColumns)
 
 	var dest model.Post
