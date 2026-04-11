@@ -7,7 +7,11 @@ import (
 	"github.com/noueii/no-frame-works/internal/modules/post"
 	postmw "github.com/noueii/no-frame-works/internal/modules/post/middleware"
 	postservice "github.com/noueii/no-frame-works/internal/modules/post/service"
+	"github.com/noueii/no-frame-works/internal/modules/user"
+	usermw "github.com/noueii/no-frame-works/internal/modules/user/middleware"
+	userservice "github.com/noueii/no-frame-works/internal/modules/user/service"
 	postrepo "github.com/noueii/no-frame-works/repository/post"
+	userrepo "github.com/noueii/no-frame-works/repository/user"
 )
 
 type Handler struct {
@@ -16,6 +20,7 @@ type Handler struct {
 	app      *config.App
 	identity identity.Client
 	postAPI  post.PostAPI
+	userAPI  user.UserAPI
 }
 
 func NewHandler(app *config.App) *Handler {
@@ -23,9 +28,15 @@ func NewHandler(app *config.App) *Handler {
 	svc := postservice.New(repo)
 	api := postmw.NewPermissionLayer(svc, repo)
 
+	idClient := app.IdentityClient()
+	userRepo := userrepo.New(idClient)
+	userSvc := userservice.New(userRepo)
+	userAPI := usermw.NewPermissionLayer(userSvc)
+
 	return &Handler{
 		app:      app,
-		identity: app.IdentityClient(),
+		identity: idClient,
 		postAPI:  api,
+		userAPI:  userAPI,
 	}
 }
