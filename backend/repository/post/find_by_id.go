@@ -3,9 +3,8 @@ package post
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 
+	"github.com/go-errors/errors"
 	. "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
@@ -24,7 +23,7 @@ func (r *PostgresPostRepository) FindByID(ctx context.Context, id string) (*doma
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("query post by id: %w", err)
+		return nil, errors.Errorf("query post by id: %w", err)
 	}
 
 	return toDomain(dest), nil

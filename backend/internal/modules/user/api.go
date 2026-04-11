@@ -1,10 +1,14 @@
 package user
 
-import "context"
+import (
+	"context"
+
+	"github.com/noueii/no-frame-works/internal/core/actor"
+)
 
 // UserAPI is the public contract for the user module.
 type UserAPI interface {
-	EditUsername(ctx context.Context, req EditUsernameRequest) (UserView, error)
+	EditUsername(ctx context.Context, req EditUsernameRequest) (*UserView, error)
 }
 
 // Permission is a string-based permission identifier.
@@ -39,6 +43,19 @@ func (r EditUsernameRequest) Validate() error {
 	return nil
 }
 
-func (r EditUsernameRequest) Permission() Permission {
-	return PermUserEdit
+func (r EditUsernameRequest) CheckPermission(ctx context.Context) error {
+	a := actor.ActorFrom(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	if a.IsSystem() {
+		return nil
+	}
+	if ua, ok := a.(actor.UserActor); ok && ua.HasRole(actor.RoleAdmin) {
+		return nil
+	}
+	if a.UserID().String() == r.UserID {
+		return nil
+	}
+	return ErrForbidden
 }

@@ -2,8 +2,8 @@ package post
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/go-errors/errors"
 	. "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
@@ -19,7 +19,7 @@ func (r *PostgresPostRepository) ListAll(ctx context.Context) ([]domain.Post, er
 	var dest []model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if err != nil {
-		return nil, fmt.Errorf("query all posts: %w", err)
+		return nil, errors.Errorf("query all posts: %w", err)
 	}
 
 	posts := make([]domain.Post, len(dest))

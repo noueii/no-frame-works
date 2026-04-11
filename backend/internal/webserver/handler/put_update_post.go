@@ -2,8 +2,8 @@ package handler
 
 import (
 	"context"
-	"errors"
 
+	"github.com/go-errors/errors"
 	"github.com/noueii/no-frame-works/generated/oapi"
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
@@ -22,5 +22,5 @@ func (h *Handler) PutUpdatePost(ctx context.Context, request oapi.PutUpdatePostR
 		return oapi.PutUpdatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()}}, nil
 	}
 
-	return oapi.PutUpdatePost200JSONResponse(toOAPIPost(result)), nil
+	return oapi.PutUpdatePost200JSONResponse(toOAPIPost(*result)), nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
+	"github.com/go-errors/errors"
 	"github.com/go-jet/jet/v2/postgres"
 )
 
@@ -30,7 +31,7 @@ func NewSentryProvider(env *EnvProvider) (*sentryhttp.Handler, error) {
 		TracesSampleRate: 1.0,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("sentry initialization failed: %w", err)
+		return nil, errors.Errorf("sentry initialization failed: %w", err)
 	}
 
 	initializeDBTracing()

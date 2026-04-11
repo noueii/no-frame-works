@@ -3,8 +3,8 @@ package provider
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 
+	"github.com/go-errors/errors"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -32,7 +32,7 @@ func NewRedisProvider(env *EnvProvider) (*redis.Client, error) {
 
 	err := rdb.Ping(context.Background()).Err()
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, errors.Errorf(
 			"unable to initialize redis connection (addr: %s): %w",
 			opts.Addr,
 			err,

@@ -1,11 +1,13 @@
 package post
 
-import "errors"
+import "github.com/go-errors/errors"
 
 var (
-	ErrTitleRequired    = errors.New("title is required")
-	ErrContentRequired  = errors.New("content is required")
-	ErrAuthorIDRequired = errors.New("author_id is required")
-	ErrIDRequired       = errors.New("id is required")
-	ErrPostNotFound     = errors.New("post not found")
+	ErrTitleRequired    = errors.Errorf("title is required")
+	ErrContentRequired  = errors.Errorf("content is required")
+	ErrAuthorIDRequired = errors.Errorf("author_id is required")
+	ErrIDRequired       = errors.Errorf("id is required")
+	ErrPostNotFound     = errors.Errorf("post not found")
+	ErrUnauthorized     = errors.Errorf("unauthorized: no actor in context")
+	ErrForbidden        = errors.Errorf("forbidden: insufficient permissions")
 )

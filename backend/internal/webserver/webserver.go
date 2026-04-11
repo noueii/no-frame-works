@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/config"
 	"github.com/noueii/no-frame-works/generated/oapi"

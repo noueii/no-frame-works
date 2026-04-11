@@ -2,8 +2,8 @@ package post
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/go-errors/errors"
 	. "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
@@ -15,7 +15,7 @@ func (r *PostgresPostRepository) Delete(ctx context.Context, id string) error {
 
 	_, err := stmt.ExecContext(ctx, r.db)
 	if err != nil {
-		return fmt.Errorf("delete post: %w", err)
+		return errors.Errorf("delete post: %w", err)
 	}
 	return nil
 }

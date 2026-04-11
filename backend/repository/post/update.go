@@ -2,8 +2,8 @@ package post
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/go-errors/errors"
 	. "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
@@ -26,7 +26,7 @@ func (r *PostgresPostRepository) Update(ctx context.Context, p domain.Post) (*do
 	var dest model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if err != nil {
-		return nil, fmt.Errorf("update post: %w", err)
+		return nil, errors.Errorf("update post: %w", err)
 	}
 
 	return toDomain(dest), nil

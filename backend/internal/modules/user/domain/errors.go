@@ -1,8 +1,8 @@
 package domain
 
-import "errors"
+import "github.com/go-errors/errors"
 
 var (
-	ErrUserNotFound  = errors.New("user not found")
-	ErrUsernameTaken = errors.New("username is already taken")
+	ErrUserNotFound  = errors.Errorf("user not found")
+	ErrUsernameTaken = errors.Errorf("username is already taken")
 )

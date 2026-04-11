@@ -24,5 +24,5 @@ func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePos
 		return oapi.PostCreatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()}}, nil
 	}
 
-	return oapi.PostCreatePost201JSONResponse(toOAPIPost(result)), nil
+	return oapi.PostCreatePost201JSONResponse(toOAPIPost(*result)), nil
 }

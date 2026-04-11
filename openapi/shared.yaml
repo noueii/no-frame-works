@@ -8,13 +8,23 @@ components:
           format: uuid
         name:
           type: string
+        username:
+          type: string
         email:
           type: string
           format: email
       required:
         - id
         - name
+        - username
         - email
+    EditUsernameRequest:
+      type: object
+      properties:
+        username:
+          type: string
+      required:
+        - username
     CreateUserRequest:
       type: object
       properties:
@@ -100,6 +110,24 @@ components:
               - data
     Error403:
       description: Forbidden error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+    Error409:
+      description: Conflict error
       content:
         application/json:
           schema:

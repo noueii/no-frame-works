@@ -22,6 +22,6 @@ func New(repo user.UserRepository) *Service {
 func (s *Service) EditUsername(
 	ctx context.Context,
 	req user.EditUsernameRequest,
-) (user.UserView, error) {
-	return editusername.Execute(ctx, s.repo, req)
+) (*user.UserView, error) {
+	return editusername.EditUsername(ctx, s.repo, req)
 }

@@ -1,12 +1,12 @@
 package provider
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
 
+	"github.com/go-errors/errors"
 	"github.com/joho/godotenv"
 )
 
@@ -46,7 +46,7 @@ func NewEnvProvider(rootDir string) (*EnvProvider, error) {
 		}
 		value, exists := os.LookupEnv(key)
 		if !exists {
-			firstErr = fmt.Errorf("env key: %q is not set", key)
+			firstErr = errors.Errorf("env key: %q is not set", key)
 			return ""
 		}
 		return value
@@ -89,7 +89,7 @@ func NewEnvProvider(rootDir string) (*EnvProvider, error) {
 	databaseMaxConnsString := fallbackLookupEnv("DATABASE_MAX_CONNS", "5")
 	parsedDatabaseMaxConns, err := strconv.Atoi(databaseMaxConnsString)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, errors.Errorf(
 			"failed to parse DATABASE_MAX_CONNS val %s: %w",
 			databaseMaxConnsString,
 			err,
@@ -97,7 +97,7 @@ func NewEnvProvider(rootDir string) (*EnvProvider, error) {
 	}
 	parsedRedisDB, err := strconv.Atoi(redisDBString)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse REDIS_DB val %s: %w", redisDBString, err)
+		return nil, errors.Errorf("failed to parse REDIS_DB val %s: %w", redisDBString, err)
 	}
 
 	envProvider := EnvProvider{

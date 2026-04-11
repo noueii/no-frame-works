@@ -7,6 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0
 	github.com/getsentry/sentry-go v0.35.0
 	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-errors/errors v1.5.1
 	github.com/go-jet/jet/v2 v2.13.0
 	github.com/google/uuid v1.6.0
 	github.com/hibiken/asynq v0.25.1
