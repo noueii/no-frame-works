@@ -8,7 +8,6 @@ import (
 	ory "github.com/ory/kratos-client-go"
 )
 
-// KratosClient implements Client using the Ory Kratos SDK.
 type KratosClient struct {
 	client *ory.APIClient
 }
@@ -93,6 +92,31 @@ func (c *KratosClient) Logout(ctx context.Context, sessionToken string) error {
 	return nil
 }
 
+func (c *KratosClient) identityToDetail(ident *ory.Identity) *UserDetail {
+	detail := &UserDetail{
+		IdentityID: ident.GetId(),
+	}
+
+	traits, ok := ident.GetTraitsOk()
+	if !ok || traits == nil {
+		return detail
+	}
+
+	traitsMap, ok := (*traits).(map[string]interface{})
+	if !ok {
+		return detail
+	}
+
+	if email, ok := traitsMap["email"].(string); ok {
+		detail.Email = email
+	}
+	if username, ok := traitsMap["username"].(string); ok {
+		detail.Username = username
+	}
+
+	return detail
+}
+
 func (c *KratosClient) GetSession(ctx context.Context, sessionToken string) (*UserDetail, error) {
 	session, _, err := c.client.FrontendAPI.ToSession(ctx).
 		XSessionToken(sessionToken).Execute()
@@ -101,23 +125,48 @@ func (c *KratosClient) GetSession(ctx context.Context, sessionToken string) (*Us
 	}
 
 	identity := session.GetIdentity()
-	traits, ok := identity.GetTraitsOk()
-	if !ok || traits == nil {
-		return nil, fmt.Errorf("kratos identity has no traits")
+	return c.identityToDetail(&identity), nil
+}
+
+func (c *KratosClient) GetIdentity(ctx context.Context, id string) (*UserDetail, error) {
+	ident, _, err := c.client.IdentityAPI.GetIdentity(ctx, id).Execute()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get identity: %w", err)
 	}
 
-	traitsMap, ok := (*traits).(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("kratos traits are not a map")
+	return c.identityToDetail(ident), nil
+}
+
+func (c *KratosClient) UpdateTraits(ctx context.Context, id string, traits map[string]interface{}) (*UserDetail, error) {
+	current, _, err := c.client.IdentityAPI.GetIdentity(ctx, id).Execute()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get identity for update: %w", err)
 	}
 
-	detail := &UserDetail{
-		IdentityID: identity.GetId(),
+	body := ory.UpdateIdentityBody{
+		SchemaId: current.GetSchemaId(),
+		State:    string(current.GetState()),
+		Traits:   traits,
 	}
 
-	if email, ok := traitsMap["email"].(string); ok {
-		detail.Email = email
+	updated, _, err := c.client.IdentityAPI.UpdateIdentity(ctx, id).
+		UpdateIdentityBody(body).Execute()
+	if err != nil {
+		return nil, fmt.Errorf("failed to update identity traits: %w", err)
 	}
 
-	return detail, nil
+	return c.identityToDetail(updated), nil
+}
+
+func (c *KratosClient) ListIdentities(ctx context.Context) ([]UserDetail, error) {
+	identities, _, err := c.client.IdentityAPI.ListIdentities(ctx).Execute()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list identities: %w", err)
+	}
+
+	details := make([]UserDetail, 0, len(identities))
+	for _, ident := range identities {
+		details = append(details, *c.identityToDetail(&ident))
+	}
+	return details, nil
 }
