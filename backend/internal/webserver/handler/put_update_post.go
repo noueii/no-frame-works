@@ -20,6 +20,16 @@ func (h *Handler) PutUpdatePost(
 		Content: request.Body.Content,
 	})
 	if err != nil {
+		if errors.Is(err, post.ErrUnauthorized) {
+			return oapi.PutUpdatePost401JSONResponse{
+				Error: "unauthorized",
+			}, nil
+		}
+		if errors.Is(err, post.ErrForbidden) {
+			return oapi.PutUpdatePost403JSONResponse{
+				Error: "forbidden",
+			}, nil
+		}
 		if errors.Is(err, post.ErrPostNotFound) {
 			return oapi.PutUpdatePost404JSONResponse{
 				Error: "post not found",

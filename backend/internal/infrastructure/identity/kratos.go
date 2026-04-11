@@ -158,6 +158,9 @@ func (c *KratosClient) GetIdentity(ctx context.Context, id string) (*UserDetail,
 		defer resp.Body.Close()
 	}
 	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return nil, nil //nolint:nilnil // not found is not an error
+		}
 		return nil, errors.Errorf("failed to get identity: %w", err)
 	}
 

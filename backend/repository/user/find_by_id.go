@@ -14,5 +14,9 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.User, err
 		return nil, errors.Errorf("get identity: %w", err)
 	}
 
+	if detail == nil {
+		return nil, domain.ErrUserNotFound
+	}
+
 	return toDomain(detail), nil
 }

@@ -14,6 +14,7 @@ import (
 func (r *PostgresPostRepository) Update(ctx context.Context, p domain.Post) (*domain.Post, error) {
 	update := toModel(p)
 
+	// Explicit columns instead of MutableColumns — AuthorID and CreatedAt must not change on update.
 	stmt := table.Post.UPDATE(
 		table.Post.Title,
 		table.Post.Content,

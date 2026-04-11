@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 
+	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/generated/oapi"
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
@@ -17,13 +19,23 @@ func (h *Handler) GetPosts(
 			AuthorID: request.Params.AuthorId.String(),
 		})
 		if err != nil {
+			if errors.Is(err, post.ErrUnauthorized) {
+				return oapi.GetPosts401JSONResponse{
+					ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"},
+				}, nil
+			}
 			return nil, err
 		}
 		return oapi.GetPosts200JSONResponse(toOAPIPosts(results)), nil
 	}
 
-	results, err := h.postAPI.ListAllPosts(ctx)
+	results, err := h.postAPI.ListAllPosts(ctx, post.ListAllPostsRequest{})
 	if err != nil {
+		if errors.Is(err, post.ErrUnauthorized) {
+			return oapi.GetPosts401JSONResponse{
+				ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"},
+			}, nil
+		}
 		return nil, err
 	}
 	return oapi.GetPosts200JSONResponse(toOAPIPosts(results)), nil

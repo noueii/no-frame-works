@@ -5,6 +5,8 @@ import (
 	usermod "github.com/noueii/no-frame-works/internal/modules/user"
 )
 
+var _ usermod.Repository = (*Repository)(nil)
+
 type Repository struct {
 	identity identity.Client
 }

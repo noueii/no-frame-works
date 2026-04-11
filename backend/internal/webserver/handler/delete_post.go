@@ -18,9 +18,19 @@ func (h *Handler) DeletePost(
 		ID: request.Id.String(),
 	})
 	if err != nil {
+		if errors.Is(err, post.ErrUnauthorized) {
+			return oapi.DeletePost401JSONResponse{
+				ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"},
+			}, nil
+		}
+		if errors.Is(err, post.ErrForbidden) {
+			return oapi.DeletePost403JSONResponse{
+				Error: "forbidden",
+			}, nil
+		}
 		if errors.Is(err, post.ErrPostNotFound) {
 			return oapi.DeletePost404JSONResponse{
-				ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "post not found"},
+				Error: "post not found",
 			}, nil
 		}
 		return nil, err

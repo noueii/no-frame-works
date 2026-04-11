@@ -10,6 +10,8 @@ import (
 var (
 	ErrUserNotFound  = domain.ErrUserNotFound
 	ErrUsernameTaken = domain.ErrUsernameTaken
+	ErrUnauthorized  = domain.ErrUnauthorized
+	ErrForbidden     = domain.ErrForbidden
 )
 
 var (
@@ -17,9 +19,4 @@ var (
 	ErrUsernameRequired = errors.Errorf("username is required")
 	ErrUsernameTooShort = errors.Errorf("username must be at least 3 characters")
 	ErrUsernameTooLong  = errors.Errorf("username must be at most 32 characters")
-)
-
-var (
-	ErrUnauthorized = errors.Errorf("unauthorized: no actor in context")
-	ErrForbidden    = errors.Errorf("forbidden: insufficient permissions")
 )

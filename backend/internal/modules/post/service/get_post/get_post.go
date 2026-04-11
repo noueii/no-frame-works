@@ -3,8 +3,6 @@ package getpost
 import (
 	"context"
 
-	"github.com/go-errors/errors"
-
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
 
@@ -24,11 +22,7 @@ func GetPost(
 
 	found, err := repo.FindByID(ctx, req.ID)
 	if err != nil {
-		return nil, errors.Errorf("failed to get post: %w", err)
-	}
-
-	if found == nil {
-		return nil, post.ErrPostNotFound
+		return nil, err
 	}
 
 	return &post.View{

@@ -18,10 +18,13 @@ func (h *Handler) GetPost(
 		ID: request.Id.String(),
 	})
 	if err != nil {
-		if errors.Is(err, post.ErrPostNotFound) {
-			return oapi.GetPost404JSONResponse{
-				ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "post not found"},
+		if errors.Is(err, post.ErrUnauthorized) {
+			return oapi.GetPost401JSONResponse{
+				ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"},
 			}, nil
+		}
+		if errors.Is(err, post.ErrPostNotFound) {
+			return oapi.GetPost404JSONResponse{Error: "post not found"}, nil
 		}
 		return nil, err
 	}

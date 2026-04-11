@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 
+	"github.com/go-errors/errors"
+
 	"github.com/noueii/no-frame-works/generated/oapi"
 	"github.com/noueii/no-frame-works/internal/core/actor"
 	"github.com/noueii/no-frame-works/internal/modules/post"
@@ -15,8 +17,8 @@ func (h *Handler) PostCreatePost(
 ) (oapi.PostCreatePostResponseObject, error) {
 	a := actor.From(ctx)
 	if a == nil {
-		return oapi.PostCreatePost400JSONResponse{
-			ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"},
+		return oapi.PostCreatePost401JSONResponse{
+			Error: "unauthorized",
 		}, nil
 	}
 
@@ -26,7 +28,11 @@ func (h *Handler) PostCreatePost(
 		AuthorID: a.UserID().String(),
 	})
 	if err != nil {
-		//nolint:nilerr // error mapped to HTTP response
+		if errors.Is(err, post.ErrUnauthorized) {
+			return oapi.PostCreatePost401JSONResponse{
+				Error: "unauthorized",
+			}, nil
+		}
 		return oapi.PostCreatePost400JSONResponse{
 			ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()},
 		}, nil

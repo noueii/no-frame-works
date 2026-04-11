@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/noueii/no-frame-works/internal/core/actor"
 	"github.com/noueii/no-frame-works/internal/modules/post"
 	createpost "github.com/noueii/no-frame-works/internal/modules/post/service/create_post"
 	getpost "github.com/noueii/no-frame-works/internal/modules/post/service/get_post"
@@ -35,10 +34,16 @@ func (s *Service) GetPost(ctx context.Context, req post.GetPostRequest) (*post.V
 	return getpost.GetPost(ctx, s.repo, req)
 }
 
-func (s *Service) ListAllPosts(ctx context.Context) ([]post.View, error) {
-	a := actor.From(ctx)
-	if a == nil {
-		return nil, post.ErrUnauthorized
+func (s *Service) ListAllPosts(
+	ctx context.Context,
+	req post.ListAllPostsRequest,
+) ([]post.View, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	if err := req.CheckPermission(ctx); err != nil {
+		return nil, err
 	}
 
 	posts, err := s.repo.ListAll(ctx)
@@ -69,10 +74,7 @@ func (s *Service) UpdatePost(
 
 	existing, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
-		return nil, errors.Errorf("failed to find post: %w", err)
-	}
-	if existing == nil {
-		return nil, post.ErrPostNotFound
+		return nil, err
 	}
 
 	if permErr := req.CheckPermission(ctx, existing); permErr != nil {
@@ -102,10 +104,7 @@ func (s *Service) DeletePost(ctx context.Context, req post.DeletePostRequest) er
 
 	existing, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
-		return errors.Errorf("failed to find post: %w", err)
-	}
-	if existing == nil {
-		return post.ErrPostNotFound
+		return err
 	}
 
 	if permErr := req.CheckPermission(ctx, existing); permErr != nil {

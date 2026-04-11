@@ -20,7 +20,7 @@ func (r *PostgresPostRepository) FindByID(ctx context.Context, id string) (*doma
 	var dest model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil //nolint:nilnil // not found returns nil
+		return nil, domain.ErrPostNotFound
 	}
 	if err != nil {
 		return nil, errors.Errorf("query post by id: %w", err)

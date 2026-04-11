@@ -1010,6 +1010,7 @@ type GetPostsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]Post
+	JSON401      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1033,6 +1034,7 @@ type PostCreatePostResponse struct {
 	HTTPResponse *http.Response
 	JSON201      *Post
 	JSON400      *Error
+	JSON401      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1054,6 +1056,8 @@ func (r PostCreatePostResponse) StatusCode() int {
 type DeletePostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON401      *Error
+	JSON403      *Error
 	JSON404      *Error
 }
 
@@ -1077,6 +1081,7 @@ type GetPostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *Post
+	JSON401      *Error
 	JSON404      *Error
 }
 
@@ -1101,6 +1106,8 @@ type PutUpdatePostResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *Post
 	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
 	JSON404      *Error
 }
 
@@ -1148,6 +1155,8 @@ type PutEditUsernameResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *User
 	JSON400      *Error
+	JSON401      *Error
+	JSON403      *Error
 	JSON404      *Error
 	JSON409      *Error
 }
@@ -1450,6 +1459,13 @@ func ParseGetPostsResponse(rsp *http.Response) (*GetPostsResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -1483,6 +1499,13 @@ func ParsePostCreatePostResponse(rsp *http.Response) (*PostCreatePostResponse, e
 		}
 		response.JSON400 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -1502,6 +1525,20 @@ func ParseDeletePostResponse(rsp *http.Response) (*DeletePostResponse, error) {
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1534,6 +1571,13 @@ func ParseGetPostResponse(rsp *http.Response) (*GetPostResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
@@ -1574,6 +1618,20 @@ func ParsePutUpdatePostResponse(rsp *http.Response) (*PutUpdatePostResponse, err
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
@@ -1647,6 +1705,20 @@ func ParsePutEditUsernameResponse(rsp *http.Response) (*PutEditUsernameResponse,
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
@@ -2279,6 +2351,15 @@ func (response GetPosts200JSONResponse) VisitGetPostsResponse(w http.ResponseWri
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetPosts401JSONResponse struct{ ErrorJSONResponse }
+
+func (response GetPosts401JSONResponse) VisitGetPostsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type PostCreatePostRequestObject struct {
 	Body *PostCreatePostJSONRequestBody
 }
@@ -2305,6 +2386,17 @@ func (response PostCreatePost400JSONResponse) VisitPostCreatePostResponse(w http
 	return json.NewEncoder(w).Encode(response)
 }
 
+type PostCreatePost401JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PostCreatePost401JSONResponse) VisitPostCreatePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type DeletePostRequestObject struct {
 	Id openapi_types.UUID `json:"id"`
 }
@@ -2321,7 +2413,29 @@ func (response DeletePost204Response) VisitDeletePostResponse(w http.ResponseWri
 	return nil
 }
 
-type DeletePost404JSONResponse struct{ ErrorJSONResponse }
+type DeletePost401JSONResponse struct{ ErrorJSONResponse }
+
+func (response DeletePost401JSONResponse) VisitDeletePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeletePost403JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response DeletePost403JSONResponse) VisitDeletePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeletePost404JSONResponse struct {
+	Error string `json:"error"`
+}
 
 func (response DeletePost404JSONResponse) VisitDeletePostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2347,7 +2461,18 @@ func (response GetPost200JSONResponse) VisitGetPostResponse(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetPost404JSONResponse struct{ ErrorJSONResponse }
+type GetPost401JSONResponse struct{ ErrorJSONResponse }
+
+func (response GetPost401JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetPost404JSONResponse struct {
+	Error string `json:"error"`
+}
 
 func (response GetPost404JSONResponse) VisitGetPostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2379,6 +2504,28 @@ type PutUpdatePost400JSONResponse struct{ ErrorJSONResponse }
 func (response PutUpdatePost400JSONResponse) VisitPutUpdatePostResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutUpdatePost401JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PutUpdatePost401JSONResponse) VisitPutUpdatePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutUpdatePost403JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PutUpdatePost403JSONResponse) VisitPutUpdatePostResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2443,6 +2590,28 @@ type PutEditUsername400JSONResponse struct{ ErrorJSONResponse }
 func (response PutEditUsername400JSONResponse) VisitPutEditUsernameResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutEditUsername401JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PutEditUsername401JSONResponse) VisitPutEditUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutEditUsername403JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PutEditUsername403JSONResponse) VisitPutEditUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }

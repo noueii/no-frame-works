@@ -18,6 +18,16 @@ func (h *Handler) PutEditUsername(
 		Username: request.Body.Username,
 	})
 	if err != nil {
+		if errors.Is(err, user.ErrUnauthorized) {
+			return oapi.PutEditUsername401JSONResponse{
+				Error: "unauthorized",
+			}, nil
+		}
+		if errors.Is(err, user.ErrForbidden) {
+			return oapi.PutEditUsername403JSONResponse{
+				Error: "forbidden",
+			}, nil
+		}
 		if errors.Is(err, user.ErrUserNotFound) {
 			return oapi.PutEditUsername404JSONResponse{
 				Error: "user not found",

@@ -11,9 +11,6 @@ type API interface {
 	EditUsername(ctx context.Context, req EditUsernameRequest) (*View, error)
 }
 
-// Permission is a string-based permission identifier.
-type Permission string
-
 // View is the exported type that external consumers see.
 type View struct {
 	ID       string

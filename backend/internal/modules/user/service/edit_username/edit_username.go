@@ -25,17 +25,17 @@ func EditUsername(
 
 	existing, err := repo.FindByID(ctx, req.UserID)
 	if err != nil {
-		return nil, errors.Errorf("failed to find user: %w", err)
-	}
-	if existing == nil {
-		return nil, domain.ErrUserNotFound
+		return nil, err
 	}
 
 	taken, err := repo.FindByUsername(ctx, req.Username)
 	if err != nil {
-		return nil, errors.Errorf("failed to check username: %w", err)
-	}
-	if taken != nil && taken.ID != req.UserID {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			// username is available, continue
+		} else {
+			return nil, err
+		}
+	} else if taken.ID != req.UserID {
 		return nil, domain.ErrUsernameTaken
 	}
 

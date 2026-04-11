@@ -13,7 +13,7 @@ type API interface {
 	GetPost(ctx context.Context, req GetPostRequest) (*View, error)
 	UpdatePost(ctx context.Context, req UpdatePostRequest) (*View, error)
 	DeletePost(ctx context.Context, req DeletePostRequest) error
-	ListAllPosts(ctx context.Context) ([]View, error)
+	ListAllPosts(ctx context.Context, req ListAllPostsRequest) ([]View, error)
 	ListPosts(ctx context.Context, req ListPostsRequest) ([]View, error)
 }
 
@@ -66,6 +66,21 @@ func (r GetPostRequest) Validate() error {
 }
 
 func (r GetPostRequest) CheckPermission(ctx context.Context) error {
+	a := actor.From(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	return nil
+}
+
+// ListAllPostsRequest is the request to list all posts.
+type ListAllPostsRequest struct{}
+
+func (r ListAllPostsRequest) Validate() error {
+	return nil
+}
+
+func (r ListAllPostsRequest) CheckPermission(ctx context.Context) error {
 	a := actor.From(ctx)
 	if a == nil {
 		return ErrUnauthorized

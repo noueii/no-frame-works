@@ -20,5 +20,5 @@ func (r *Repository) FindByUsername(ctx context.Context, username string) (*doma
 		}
 	}
 
-	return nil, nil //nolint:nilnil // not found returns nil
+	return nil, domain.ErrUserNotFound
 }
