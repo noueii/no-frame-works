@@ -53,6 +53,37 @@ paths:
           $ref: '../shared.yaml#/components/responses/Error404'
         '500':
           $ref: '../shared.yaml#/components/responses/Error500'
+  /users/{id}/username:
+    put:
+      operationId: put-edit-username
+      summary: Edit Username
+      description: Change a user's username
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../shared.yaml#/components/schemas/EditUsernameRequest'
+      responses:
+        '200':
+          description: Username updated
+          content:
+            application/json:
+              schema:
+                $ref: '../shared.yaml#/components/schemas/User'
+        '400':
+          $ref: '../shared.yaml#/components/responses/Error400'
+        '404':
+          $ref: '../shared.yaml#/components/responses/Error404'
+        '409':
+          $ref: '../shared.yaml#/components/responses/Error409'
   /posts:
     post:
       operationId: create-post
@@ -73,6 +104,29 @@ paths:
                 $ref: '../shared.yaml#/components/schemas/Post'
         '400':
           $ref: '../shared.yaml#/components/responses/Error400'
+        '500':
+          $ref: '../shared.yaml#/components/responses/Error500'
+    get:
+      operationId: list-posts
+      summary: List Posts
+      description: List posts, optionally filtered by author
+      parameters:
+        - name: authorId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter posts by author ID
+      responses:
+        '200':
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../shared.yaml#/components/schemas/Post'
         '500':
           $ref: '../shared.yaml#/components/responses/Error500'
   /posts/{id}:
@@ -96,29 +150,5 @@ paths:
                 $ref: '../shared.yaml#/components/schemas/Post'
         '404':
           $ref: '../shared.yaml#/components/responses/Error404'
-        '500':
-          $ref: '../shared.yaml#/components/responses/Error500'
-  /posts:
-    get:
-      operationId: list-posts
-      summary: List Posts
-      description: List posts, optionally filtered by author
-      parameters:
-        - name: authorId
-          in: query
-          required: false
-          schema:
-            type: string
-            format: uuid
-          description: Filter posts by author ID
-      responses:
-        '200':
-          description: Posts
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '../shared.yaml#/components/schemas/Post'
         '500':
           $ref: '../shared.yaml#/components/responses/Error500'

@@ -106,6 +106,44 @@ paths:
         '404':
           $ref: '#/components/responses/Error'
 
+  /users/{id}/username:
+    put:
+      operationId: put-edit-username
+      summary: Edit Username
+      description: Change a user's username
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditUsernameRequest'
+      responses:
+        '200':
+          description: Username updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+
   /posts:
     get:
       operationId: get-posts
@@ -130,6 +168,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Post'
+        '401':
+          $ref: '#/components/responses/Error'
     post:
       operationId: post-create-post
       summary: Create Post
@@ -150,6 +190,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Post'
         '400':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
 
   /posts/{id}:
@@ -173,6 +215,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Post'
+        '401':
+          $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
     put:
@@ -203,6 +247,10 @@ paths:
                 $ref: '#/components/schemas/Post'
         '400':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
     delete:
@@ -221,6 +269,10 @@ paths:
       responses:
         '204':
           description: Post deleted
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
 
@@ -277,12 +329,23 @@ components:
         id:
           type: string
           format: uuid
+        username:
+          type: string
         email:
           type: string
           format: email
       required:
         - id
+        - username
         - email
+
+    EditUsernameRequest:
+      type: object
+      properties:
+        username:
+          type: string
+      required:
+        - username
 
     UpdatePostRequest:
       type: object

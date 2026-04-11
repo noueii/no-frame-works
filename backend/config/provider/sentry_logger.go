@@ -2,10 +2,10 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/go-errors/errors"
 )
 
 type sentryLogHandler struct {
@@ -42,7 +42,7 @@ func (h *sentryLogHandler) Handle(
 		})
 
 		if !found {
-			hub.CaptureException(fmt.Errorf("%s", record.Message))
+			hub.CaptureException(errors.Errorf("%s", record.Message))
 		}
 
 	case record.Level >= slog.LevelWarn:

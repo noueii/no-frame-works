@@ -2,9 +2,9 @@ package post
 
 import (
 	"context"
-	"fmt"
 
-	. "github.com/go-jet/jet/v2/postgres"
+	"github.com/go-errors/errors"
+	jet "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
@@ -14,19 +14,20 @@ import (
 func (r *PostgresPostRepository) Update(ctx context.Context, p domain.Post) (*domain.Post, error) {
 	update := toModel(p)
 
+	// Explicit columns instead of MutableColumns — AuthorID and CreatedAt must not change on update.
 	stmt := table.Post.UPDATE(
 		table.Post.Title,
 		table.Post.Content,
 		table.Post.UpdatedAt,
 	).MODEL(update).
-		SET(table.Post.UpdatedAt.SET(TimestampExp(RawTimestamp("now()")))).
-		WHERE(table.Post.ID.EQ(String(p.ID))).
+		SET(table.Post.UpdatedAt.SET(jet.TimestampExp(jet.RawTimestamp("now()")))).
+		WHERE(table.Post.ID.EQ(jet.String(p.ID))).
 		RETURNING(table.Post.AllColumns)
 
 	var dest model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if err != nil {
-		return nil, fmt.Errorf("update post: %w", err)
+		return nil, errors.Errorf("update post: %w", err)
 	}
 
 	return toDomain(dest), nil

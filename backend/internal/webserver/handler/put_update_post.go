@@ -2,25 +2,43 @@ package handler
 
 import (
 	"context"
-	"errors"
+
+	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
 
 // PutUpdatePost handles PUT /posts/{id}.
-func (h *Handler) PutUpdatePost(ctx context.Context, request oapi.PutUpdatePostRequestObject) (oapi.PutUpdatePostResponseObject, error) {
+func (h *Handler) PutUpdatePost(
+	ctx context.Context,
+	request oapi.PutUpdatePostRequestObject,
+) (oapi.PutUpdatePostResponseObject, error) {
 	result, err := h.postAPI.UpdatePost(ctx, post.UpdatePostRequest{
 		ID:      request.Id.String(),
 		Title:   request.Body.Title,
 		Content: request.Body.Content,
 	})
 	if err != nil {
-		if errors.Is(err, post.ErrPostNotFound) {
-			return oapi.PutUpdatePost404JSONResponse{Error: "post not found"}, nil
+		if errors.Is(err, post.ErrUnauthorized) {
+			return oapi.PutUpdatePost401JSONResponse{
+				Error: "unauthorized",
+			}, nil
 		}
-		return oapi.PutUpdatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()}}, nil
+		if errors.Is(err, post.ErrForbidden) {
+			return oapi.PutUpdatePost403JSONResponse{
+				Error: "forbidden",
+			}, nil
+		}
+		if errors.Is(err, post.ErrPostNotFound) {
+			return oapi.PutUpdatePost404JSONResponse{
+				Error: "post not found",
+			}, nil
+		}
+		return oapi.PutUpdatePost400JSONResponse{
+			ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()},
+		}, nil
 	}
 
-	return oapi.PutUpdatePost200JSONResponse(toOAPIPost(result)), nil
+	return oapi.PutUpdatePost200JSONResponse(toOAPIPost(*result)), nil
 }

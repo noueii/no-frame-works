@@ -7,7 +7,7 @@ import (
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
 
-func toOAPIPost(v post.PostView) oapi.Post {
+func toOAPIPost(v post.View) oapi.Post {
 	return oapi.Post{
 		Id:       uuid.MustParse(v.ID),
 		Title:    v.Title,
@@ -16,7 +16,7 @@ func toOAPIPost(v post.PostView) oapi.Post {
 	}
 }
 
-func toOAPIPosts(views []post.PostView) []oapi.Post {
+func toOAPIPosts(views []post.View) []oapi.Post {
 	posts := make([]oapi.Post, len(views))
 	for i, v := range views {
 		posts[i] = toOAPIPost(v)

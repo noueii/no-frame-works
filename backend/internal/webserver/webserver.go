@@ -2,7 +2,6 @@ package webserver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/config"
 	"github.com/noueii/no-frame-works/generated/oapi"
@@ -25,13 +25,17 @@ type Webserver struct {
 	serverAddr string
 }
 
+const (
+	defaultEncoderLevel   = 1
+	readHeaderTimeoutSecs = 3
+)
+
 func NewWebserver(app *config.App) *Webserver {
 	h := handler.NewHandler(app)
 	serverAddr := ":" + app.EnvVars().ServerPort()
-	encoderLevel := 1
 
 	r := chi.NewRouter()
-	r.Use(middleware.NewEncoderMiddleware(encoderLevel))
+	r.Use(middleware.NewEncoderMiddleware(defaultEncoderLevel))
 	r.Use(chimiddleware.Recoverer)
 	r.Use(app.Sentry().Handle)
 	r.Use(middleware.NewCORSMiddleware())
@@ -50,7 +54,7 @@ func NewWebserver(app *config.App) *Webserver {
 			h,
 			[]oapi.StrictMiddlewareFunc{handler.RequestContextMiddleware},
 			oapi.StrictHTTPServerOptions{
-				RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 				},
 				ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
@@ -77,13 +81,10 @@ const shutdownTimeout = 10 * time.Second
 func (ws *Webserver) Start() error {
 	slog.Default().Info("WebServer listening on " + ws.serverAddr)
 
-	headerTimeout := 3
 	s := &http.Server{
-		Handler: ws.router,
-		Addr:    ws.serverAddr,
-		ReadHeaderTimeout: time.Duration(
-			headerTimeout,
-		) * time.Second,
+		Handler:           ws.router,
+		Addr:              ws.serverAddr,
+		ReadHeaderTimeout: readHeaderTimeoutSecs * time.Second,
 	}
 
 	serverErrors := make(chan error, 1)

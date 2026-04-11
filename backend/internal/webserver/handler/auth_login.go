@@ -12,12 +12,17 @@ func (h *Handler) PostAuthLogin(
 	request oapi.PostAuthLoginRequestObject,
 ) (oapi.PostAuthLoginResponseObject, error) {
 	if request.Body.Email == "" || request.Body.Password == "" {
-		return oapi.PostAuthLogin400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "email and password are required"}}, nil
+		return oapi.PostAuthLogin400JSONResponse{
+			ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "email and password are required"},
+		}, nil
 	}
 
 	result, err := h.identity.Login(ctx, string(request.Body.Email), request.Body.Password)
 	if err != nil {
-		return oapi.PostAuthLogin401JSONResponse{Error: "invalid credentials"}, nil
+		//nolint:nilerr // error mapped to HTTP response
+		return oapi.PostAuthLogin401JSONResponse{
+			Error: "invalid credentials",
+		}, nil
 	}
 
 	if w := ResponseWriterFromContext(ctx); w != nil {

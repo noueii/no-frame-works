@@ -2,7 +2,8 @@ package service
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/internal/modules/post"
 	createpost "github.com/noueii/no-frame-works/internal/modules/post/service/create_post"
@@ -10,13 +11,13 @@ import (
 	listposts "github.com/noueii/no-frame-works/internal/modules/post/service/list_posts"
 )
 
-// Service implements post.PostAPI.
+// Service implements post.API.
 type Service struct {
-	repo post.PostRepository
+	repo post.Repository
 }
 
 // New creates a new post service.
-func New(repo post.PostRepository) *Service {
+func New(repo post.Repository) *Service {
 	return &Service{
 		repo: repo,
 	}
@@ -25,23 +26,34 @@ func New(repo post.PostRepository) *Service {
 func (s *Service) CreatePost(
 	ctx context.Context,
 	req post.CreatePostRequest,
-) (post.PostView, error) {
-	return createpost.Execute(ctx, s.repo, req)
+) (*post.View, error) {
+	return createpost.CreatePost(ctx, s.repo, req)
 }
 
-func (s *Service) GetPost(ctx context.Context, req post.GetPostRequest) (post.PostView, error) {
-	return getpost.Execute(ctx, s.repo, req)
+func (s *Service) GetPost(ctx context.Context, req post.GetPostRequest) (*post.View, error) {
+	return getpost.GetPost(ctx, s.repo, req)
 }
 
-func (s *Service) ListAllPosts(ctx context.Context) ([]post.PostView, error) {
-	posts, err := s.repo.ListAll(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list all posts: %w", err)
+func (s *Service) ListAllPosts(
+	ctx context.Context,
+	req post.ListAllPostsRequest,
+) ([]post.View, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
 	}
 
-	views := make([]post.PostView, len(posts))
+	if err := req.CheckPermission(ctx); err != nil {
+		return nil, err
+	}
+
+	posts, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to list all posts: %w", err)
+	}
+
+	views := make([]post.View, len(posts))
 	for i, p := range posts {
-		views[i] = post.PostView{
+		views[i] = post.View{
 			ID:       p.ID,
 			Title:    p.Title,
 			Content:  p.Content,
@@ -52,17 +64,21 @@ func (s *Service) ListAllPosts(ctx context.Context) ([]post.PostView, error) {
 	return views, nil
 }
 
-func (s *Service) UpdatePost(ctx context.Context, req post.UpdatePostRequest) (post.PostView, error) {
+func (s *Service) UpdatePost(
+	ctx context.Context,
+	req post.UpdatePostRequest,
+) (*post.View, error) {
 	if err := req.Validate(); err != nil {
-		return post.PostView{}, fmt.Errorf("validation failed: %w", err)
+		return nil, err
 	}
 
 	existing, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
-		return post.PostView{}, fmt.Errorf("failed to find post: %w", err)
+		return nil, err
 	}
-	if existing == nil {
-		return post.PostView{}, post.ErrPostNotFound
+
+	if permErr := req.CheckPermission(ctx, existing); permErr != nil {
+		return nil, permErr
 	}
 
 	existing.Title = req.Title
@@ -70,10 +86,10 @@ func (s *Service) UpdatePost(ctx context.Context, req post.UpdatePostRequest) (p
 
 	updated, err := s.repo.Update(ctx, *existing)
 	if err != nil {
-		return post.PostView{}, fmt.Errorf("failed to update post: %w", err)
+		return nil, errors.Errorf("failed to update post: %w", err)
 	}
 
-	return post.PostView{
+	return &post.View{
 		ID:       updated.ID,
 		Title:    updated.Title,
 		Content:  updated.Content,
@@ -83,15 +99,16 @@ func (s *Service) UpdatePost(ctx context.Context, req post.UpdatePostRequest) (p
 
 func (s *Service) DeletePost(ctx context.Context, req post.DeletePostRequest) error {
 	if err := req.Validate(); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
+		return err
 	}
 
 	existing, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
-		return fmt.Errorf("failed to find post: %w", err)
+		return err
 	}
-	if existing == nil {
-		return post.ErrPostNotFound
+
+	if permErr := req.CheckPermission(ctx, existing); permErr != nil {
+		return permErr
 	}
 
 	return s.repo.Delete(ctx, req.ID)
@@ -100,6 +117,6 @@ func (s *Service) DeletePost(ctx context.Context, req post.DeletePostRequest) er
 func (s *Service) ListPosts(
 	ctx context.Context,
 	req post.ListPostsRequest,
-) ([]post.PostView, error) {
-	return listposts.Execute(ctx, s.repo, req)
+) ([]post.View, error) {
+	return listposts.ListPosts(ctx, s.repo, req)
 }

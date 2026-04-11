@@ -2,31 +2,30 @@ package getpost
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/noueii/no-frame-works/internal/modules/post"
 )
 
-// Execute retrieves a post by ID.
-func Execute(
+// GetPost retrieves a post by ID.
+func GetPost(
 	ctx context.Context,
-	repo post.PostRepository,
+	repo post.Repository,
 	req post.GetPostRequest,
-) (post.PostView, error) {
+) (*post.View, error) {
 	if err := req.Validate(); err != nil {
-		return post.PostView{}, fmt.Errorf("validation failed: %w", err)
+		return nil, err
+	}
+
+	if err := req.CheckPermission(ctx); err != nil {
+		return nil, err
 	}
 
 	found, err := repo.FindByID(ctx, req.ID)
 	if err != nil {
-		return post.PostView{}, fmt.Errorf("failed to get post: %w", err)
+		return nil, err
 	}
 
-	if found == nil {
-		return post.PostView{}, post.ErrPostNotFound
-	}
-
-	return post.PostView{
+	return &post.View{
 		ID:       found.ID,
 		Title:    found.Title,
 		Content:  found.Content,

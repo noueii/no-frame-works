@@ -3,10 +3,9 @@ package post
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 
-	. "github.com/go-jet/jet/v2/postgres"
+	"github.com/go-errors/errors"
+	jet "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
@@ -14,17 +13,17 @@ import (
 )
 
 func (r *PostgresPostRepository) FindByID(ctx context.Context, id string) (*domain.Post, error) {
-	stmt := SELECT(table.Post.AllColumns).
+	stmt := jet.SELECT(table.Post.AllColumns).
 		FROM(table.Post).
-		WHERE(table.Post.ID.EQ(String(id)))
+		WHERE(table.Post.ID.EQ(jet.String(id)))
 
 	var dest model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
+		return nil, domain.ErrPostNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("query post by id: %w", err)
+		return nil, errors.Errorf("query post by id: %w", err)
 	}
 
 	return toDomain(dest), nil

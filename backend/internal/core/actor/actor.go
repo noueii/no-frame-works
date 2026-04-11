@@ -47,8 +47,8 @@ func WithActor(ctx context.Context, a Actor) context.Context {
 	return context.WithValue(ctx, contextKey{}, a)
 }
 
-// ActorFrom extracts the actor from the context. Returns nil if no actor is set.
-func ActorFrom(ctx context.Context) Actor {
+// From extracts the actor from the context. Returns nil if no actor is set.
+func From(ctx context.Context) Actor {
 	a, _ := ctx.Value(contextKey{}).(Actor)
 	return a
 }

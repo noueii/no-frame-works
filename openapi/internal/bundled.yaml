@@ -53,6 +53,37 @@ paths:
           $ref: '#/components/responses/Error404'
         '500':
           $ref: '#/components/responses/Error500'
+  /users/{id}/username:
+    put:
+      operationId: put-edit-username
+      summary: Edit Username
+      description: Change a user's username
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditUsernameRequest'
+      responses:
+        '200':
+          description: Username updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
   /posts:
     post:
       operationId: create-post
@@ -73,6 +104,29 @@ paths:
                 $ref: '#/components/schemas/Post'
         '400':
           $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+    get:
+      operationId: list-posts
+      summary: List Posts
+      description: List posts, optionally filtered by author
+      parameters:
+        - name: authorId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter posts by author ID
+      responses:
+        '200':
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
         '500':
           $ref: '#/components/responses/Error500'
   /posts/{id}:
@@ -98,29 +152,6 @@ paths:
           $ref: '#/components/responses/Error404'
         '500':
           $ref: '#/components/responses/Error500'
-  /posts/by-author/{authorId}:
-    get:
-      operationId: list-posts-by-author
-      summary: List Posts by Author
-      description: Lists all posts by a given author
-      parameters:
-        - name: authorId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Posts found
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Post'
-        '500':
-          $ref: '#/components/responses/Error500'
 components:
   schemas:
     CreateUserRequest:
@@ -142,27 +173,23 @@ components:
           format: uuid
         name:
           type: string
+        username:
+          type: string
         email:
           type: string
           format: email
       required:
         - id
         - name
+        - username
         - email
-    CreatePostRequest:
+    EditUsernameRequest:
       type: object
       properties:
-        title:
+        username:
           type: string
-        content:
-          type: string
-        authorId:
-          type: string
-          format: uuid
       required:
-        - title
-        - content
-        - authorId
+        - username
     Post:
       type: object
       properties:
@@ -184,6 +211,20 @@ components:
         - content
         - authorId
         - authorName
+    CreatePostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        authorId:
+          type: string
+          format: uuid
+      required:
+        - title
+        - content
+        - authorId
   responses:
     Error400:
       description: Bad Request error
@@ -223,6 +264,24 @@ components:
               - data
     Error404:
       description: Not found error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              errorMessage:
+                type: string
+              data:
+                type: object
+                nullable: true
+            required:
+              - errorCode
+              - errorMessage
+              - data
+    Error409:
+      description: Conflict error
       content:
         application/json:
           schema:

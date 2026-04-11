@@ -24,6 +24,12 @@
               "via": "email"
             }
           }
+        },
+        "username": {
+          "type": "string",
+          "title": "Username",
+          "minLength": 3,
+          "maxLength": 32
         }
       },
       "required": ["email"],

@@ -2,7 +2,8 @@ package post
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
@@ -22,7 +23,7 @@ func (r *PostgresPostRepository) Create(ctx context.Context, p domain.Post) (*do
 	var dest model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)
 	if err != nil {
-		return nil, fmt.Errorf("insert post: %w", err)
+		return nil, errors.Errorf("insert post: %w", err)
 	}
 
 	return toDomain(dest), nil

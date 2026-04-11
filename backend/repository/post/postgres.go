@@ -6,7 +6,7 @@ import (
 	postmod "github.com/noueii/no-frame-works/internal/modules/post"
 )
 
-// PostgresPostRepository implements postmod.PostRepository using PostgreSQL with go-jet.
+// PostgresPostRepository implements postmod.Repository using PostgreSQL with go-jet.
 type PostgresPostRepository struct {
 	db *sql.DB
 }
@@ -16,5 +16,5 @@ func New(db *sql.DB) *PostgresPostRepository {
 	return &PostgresPostRepository{db: db}
 }
 
-// Compile-time check that PostgresPostRepository implements PostRepository.
-var _ postmod.PostRepository = (*PostgresPostRepository)(nil)
+// Compile-time check that PostgresPostRepository implements Repository.
+var _ postmod.Repository = (*PostgresPostRepository)(nil)

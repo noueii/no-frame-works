@@ -2,7 +2,6 @@ package config
 
 import (
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"os"
 	"path"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
+	"github.com/go-errors/errors"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/noueii/no-frame-works/config/provider"
@@ -35,13 +35,13 @@ func NewApp() (*App, error) {
 	var err error
 	app.env, err = provider.NewEnvProvider(app.rootDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load env provider: %w", err)
+		return nil, errors.Errorf("failed to load env provider: %w", err)
 	}
 
 	provider.NewValidationProvider()
 	app.sentry, err = provider.NewSentryProvider(app.env)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load sentry provider: %w", err)
+		return nil, errors.Errorf("failed to load sentry provider: %w", err)
 	}
 	app.logger = provider.NewLoggerProvider(app.env)
 

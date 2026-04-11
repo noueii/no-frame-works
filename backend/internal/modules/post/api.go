@@ -1,22 +1,24 @@
 package post
 
-import "context"
+import (
+	"context"
 
-// PostAPI is the public contract for the post module.
-type PostAPI interface {
-	CreatePost(ctx context.Context, req CreatePostRequest) (PostView, error)
-	GetPost(ctx context.Context, req GetPostRequest) (PostView, error)
-	UpdatePost(ctx context.Context, req UpdatePostRequest) (PostView, error)
+	"github.com/noueii/no-frame-works/internal/core/actor"
+	"github.com/noueii/no-frame-works/internal/modules/post/domain"
+)
+
+// API is the public contract for the post module.
+type API interface {
+	CreatePost(ctx context.Context, req CreatePostRequest) (*View, error)
+	GetPost(ctx context.Context, req GetPostRequest) (*View, error)
+	UpdatePost(ctx context.Context, req UpdatePostRequest) (*View, error)
 	DeletePost(ctx context.Context, req DeletePostRequest) error
-	ListAllPosts(ctx context.Context) ([]PostView, error)
-	ListPosts(ctx context.Context, req ListPostsRequest) ([]PostView, error)
+	ListAllPosts(ctx context.Context, req ListAllPostsRequest) ([]View, error)
+	ListPosts(ctx context.Context, req ListPostsRequest) ([]View, error)
 }
 
-// Permission is a string-based permission identifier.
-type Permission string
-
-// PostView is the exported type that external consumers see.
-type PostView struct {
+// View is the exported type that external consumers see.
+type View struct {
 	ID       string
 	Title    string
 	Content  string
@@ -43,8 +45,12 @@ func (r CreatePostRequest) Validate() error {
 	return nil
 }
 
-func (r CreatePostRequest) Permission() Permission {
-	return PermPostCreate
+func (r CreatePostRequest) CheckPermission(ctx context.Context) error {
+	a := actor.From(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	return nil
 }
 
 // GetPostRequest is the request to get a post by ID.
@@ -59,8 +65,27 @@ func (r GetPostRequest) Validate() error {
 	return nil
 }
 
-func (r GetPostRequest) Permission() Permission {
-	return PermPostView
+func (r GetPostRequest) CheckPermission(ctx context.Context) error {
+	a := actor.From(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	return nil
+}
+
+// ListAllPostsRequest is the request to list all posts.
+type ListAllPostsRequest struct{}
+
+func (r ListAllPostsRequest) Validate() error {
+	return nil
+}
+
+func (r ListAllPostsRequest) CheckPermission(ctx context.Context) error {
+	a := actor.From(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	return nil
 }
 
 // ListPostsRequest is the request to list posts by author.
@@ -75,8 +100,12 @@ func (r ListPostsRequest) Validate() error {
 	return nil
 }
 
-func (r ListPostsRequest) Permission() Permission {
-	return PermPostList
+func (r ListPostsRequest) CheckPermission(ctx context.Context) error {
+	a := actor.From(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	return nil
 }
 
 // UpdatePostRequest is the request to update a post.
@@ -99,6 +128,17 @@ func (r UpdatePostRequest) Validate() error {
 	return nil
 }
 
+func (r UpdatePostRequest) CheckPermission(ctx context.Context, post *domain.Post) error {
+	a := actor.From(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	if !post.CanModify(a) {
+		return ErrForbidden
+	}
+	return nil
+}
+
 // DeletePostRequest is the request to delete a post.
 type DeletePostRequest struct {
 	ID string
@@ -107,6 +147,17 @@ type DeletePostRequest struct {
 func (r DeletePostRequest) Validate() error {
 	if r.ID == "" {
 		return ErrIDRequired
+	}
+	return nil
+}
+
+func (r DeletePostRequest) CheckPermission(ctx context.Context, post *domain.Post) error {
+	a := actor.From(ctx)
+	if a == nil {
+		return ErrUnauthorized
+	}
+	if !post.CanModify(a) {
+		return ErrForbidden
 	}
 	return nil
 }
