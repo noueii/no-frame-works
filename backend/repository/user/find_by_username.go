@@ -2,23 +2,22 @@ package user
 
 import (
 	"context"
-	"database/sql"
-	"errors"
+	"fmt"
 
 	"github.com/noueii/no-frame-works/internal/modules/user/domain"
 )
 
-func (p *Postgres) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
-	var u domain.User
-	err := p.db.QueryRowContext(ctx,
-		`SELECT id, username, email, created_at, updated_at FROM users WHERE username = $1`,
-		username,
-	).Scan(&u.ID, &u.Username, &u.Email, &u.CreatedAt, &u.UpdatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
+func (r *Repository) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
+	identities, err := r.identity.ListIdentities(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list identities: %w", err)
 	}
-	return &u, nil
+
+	for _, detail := range identities {
+		if detail.Username == username {
+			return toDomain(&detail), nil
+		}
+	}
+
+	return nil, nil
 }

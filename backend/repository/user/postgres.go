@@ -1,17 +1,14 @@
 package user
 
 import (
-	"database/sql"
-
-	"github.com/noueii/no-frame-works/internal/modules/user"
+	"github.com/noueii/no-frame-works/internal/infrastructure/identity"
+	usermod "github.com/noueii/no-frame-works/internal/modules/user"
 )
 
-// Postgres implements user.UserRepository using PostgreSQL.
-type Postgres struct {
-	db *sql.DB
+type Repository struct {
+	identity identity.Client
 }
 
-// New creates a new Postgres user repository.
-func New(db *sql.DB) user.UserRepository {
-	return &Postgres{db: db}
+func New(identity identity.Client) usermod.UserRepository {
+	return &Repository{identity: identity}
 }
