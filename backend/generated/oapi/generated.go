@@ -31,6 +31,11 @@ type CreatePostRequest struct {
 	Title   string `json:"title"`
 }
 
+// EditUsernameRequest defines model for EditUsernameRequest.
+type EditUsernameRequest struct {
+	Username string `json:"username"`
+}
+
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
 	Email    openapi_types.Email `json:"email"`
@@ -64,8 +69,9 @@ type UpdatePostRequest struct {
 
 // User defines model for User.
 type User struct {
-	Email openapi_types.Email `json:"email"`
-	Id    openapi_types.UUID  `json:"id"`
+	Email    openapi_types.Email `json:"email"`
+	Id       openapi_types.UUID  `json:"id"`
+	Username string              `json:"username"`
 }
 
 // Error defines model for Error.
@@ -90,6 +96,9 @@ type PostCreatePostJSONRequestBody = CreatePostRequest
 
 // PutUpdatePostJSONRequestBody defines body for PutUpdatePost for application/json ContentType.
 type PutUpdatePostJSONRequestBody = UpdatePostRequest
+
+// PutEditUsernameJSONRequestBody defines body for PutEditUsername for application/json ContentType.
+type PutEditUsernameJSONRequestBody = EditUsernameRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -201,6 +210,11 @@ type ClientInterface interface {
 
 	// GetUser request
 	GetUser(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutEditUsernameWithBody request with any body
+	PutEditUsernameWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutEditUsername(ctx context.Context, id openapi_types.UUID, body PutEditUsernameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) PostAuthLoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -361,6 +375,30 @@ func (c *Client) PutUpdatePost(ctx context.Context, id openapi_types.UUID, body 
 
 func (c *Client) GetUser(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetUserRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutEditUsernameWithBody(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutEditUsernameRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutEditUsername(ctx context.Context, id openapi_types.UUID, body PutEditUsernameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutEditUsernameRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -743,6 +781,53 @@ func NewGetUserRequest(server string, id openapi_types.UUID) (*http.Request, err
 	return req, nil
 }
 
+// NewPutEditUsernameRequest calls the generic PutEditUsername builder with application/json body
+func NewPutEditUsernameRequest(server string, id openapi_types.UUID, body PutEditUsernameJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutEditUsernameRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewPutEditUsernameRequestWithBody generates requests for PutEditUsername with any type of body
+func NewPutEditUsernameRequestWithBody(server string, id openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/%s/username", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -823,6 +908,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetUserWithResponse request
 	GetUserWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUserResponse, error)
+
+	// PutEditUsernameWithBodyWithResponse request with any body
+	PutEditUsernameWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutEditUsernameResponse, error)
+
+	PutEditUsernameWithResponse(ctx context.Context, id openapi_types.UUID, body PutEditUsernameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutEditUsernameResponse, error)
 }
 
 type PostAuthLoginResponse struct {
@@ -1053,6 +1143,31 @@ func (r GetUserResponse) StatusCode() int {
 	return 0
 }
 
+type PutEditUsernameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *User
+	JSON400      *Error
+	JSON404      *Error
+	JSON409      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PutEditUsernameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutEditUsernameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // PostAuthLoginWithBodyWithResponse request with arbitrary body returning *PostAuthLoginResponse
 func (c *ClientWithResponses) PostAuthLoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostAuthLoginResponse, error) {
 	rsp, err := c.PostAuthLoginWithBody(ctx, contentType, body, reqEditors...)
@@ -1173,6 +1288,23 @@ func (c *ClientWithResponses) GetUserWithResponse(ctx context.Context, id openap
 		return nil, err
 	}
 	return ParseGetUserResponse(rsp)
+}
+
+// PutEditUsernameWithBodyWithResponse request with arbitrary body returning *PutEditUsernameResponse
+func (c *ClientWithResponses) PutEditUsernameWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutEditUsernameResponse, error) {
+	rsp, err := c.PutEditUsernameWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutEditUsernameResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutEditUsernameWithResponse(ctx context.Context, id openapi_types.UUID, body PutEditUsernameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutEditUsernameResponse, error) {
+	rsp, err := c.PutEditUsername(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutEditUsernameResponse(rsp)
 }
 
 // ParsePostAuthLoginResponse parses an HTTP response from a PostAuthLoginWithResponse call
@@ -1488,6 +1620,53 @@ func ParseGetUserResponse(rsp *http.Response) (*GetUserResponse, error) {
 	return response, nil
 }
 
+// ParsePutEditUsernameResponse parses an HTTP response from a PutEditUsernameWithResponse call
+func ParsePutEditUsernameResponse(rsp *http.Response) (*PutEditUsernameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutEditUsernameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Login
@@ -1520,6 +1699,9 @@ type ServerInterface interface {
 	// Get User
 	// (GET /users/{id})
 	GetUser(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Edit Username
+	// (PUT /users/{id}/username)
+	PutEditUsername(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -1583,6 +1765,12 @@ func (_ Unimplemented) PutUpdatePost(w http.ResponseWriter, r *http.Request, id 
 // Get User
 // (GET /users/{id})
 func (_ Unimplemented) GetUser(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Edit Username
+// (PUT /users/{id}/username)
+func (_ Unimplemented) PutEditUsername(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1792,6 +1980,31 @@ func (siw *ServerInterfaceWrapper) GetUser(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r)
 }
 
+// PutEditUsername operation middleware
+func (siw *ServerInterfaceWrapper) PutEditUsername(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutEditUsername(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1934,6 +2147,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users/{id}", wrapper.GetUser)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/users/{id}/username", wrapper.PutEditUsername)
 	})
 
 	return r
@@ -2204,6 +2420,55 @@ func (response GetUser404JSONResponse) VisitGetUserResponse(w http.ResponseWrite
 	return json.NewEncoder(w).Encode(response)
 }
 
+type PutEditUsernameRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PutEditUsernameJSONRequestBody
+}
+
+type PutEditUsernameResponseObject interface {
+	VisitPutEditUsernameResponse(w http.ResponseWriter) error
+}
+
+type PutEditUsername200JSONResponse User
+
+func (response PutEditUsername200JSONResponse) VisitPutEditUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutEditUsername400JSONResponse struct{ ErrorJSONResponse }
+
+func (response PutEditUsername400JSONResponse) VisitPutEditUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutEditUsername404JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PutEditUsername404JSONResponse) VisitPutEditUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutEditUsername409JSONResponse struct {
+	Error string `json:"error"`
+}
+
+func (response PutEditUsername409JSONResponse) VisitPutEditUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Login
@@ -2236,6 +2501,9 @@ type StrictServerInterface interface {
 	// Get User
 	// (GET /users/{id})
 	GetUser(ctx context.Context, request GetUserRequestObject) (GetUserResponseObject, error)
+	// Edit Username
+	// (PUT /users/{id}/username)
+	PutEditUsername(ctx context.Context, request PutEditUsernameRequestObject) (PutEditUsernameResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -2538,6 +2806,39 @@ func (sh *strictHandler) GetUser(w http.ResponseWriter, r *http.Request, id open
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetUserResponseObject); ok {
 		if err := validResponse.VisitGetUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutEditUsername operation middleware
+func (sh *strictHandler) PutEditUsername(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request PutEditUsernameRequestObject
+
+	request.Id = id
+
+	var body PutEditUsernameJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutEditUsername(ctx, request.(PutEditUsernameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutEditUsername")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutEditUsernameResponseObject); ok {
+		if err := validResponse.VisitPutEditUsernameResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
