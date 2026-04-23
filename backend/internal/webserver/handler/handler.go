@@ -3,29 +3,25 @@ package handler
 import (
 	"github.com/noueii/no-frame-works/config"
 	"github.com/noueii/no-frame-works/generated/oapi"
-	"github.com/noueii/no-frame-works/internal/infrastructure/identity"
-	"github.com/noueii/no-frame-works/internal/modules/post"
-	postmw "github.com/noueii/no-frame-works/internal/modules/post/middleware"
-	postservice "github.com/noueii/no-frame-works/internal/modules/post/service"
-	postrepo "github.com/noueii/no-frame-works/repository/post"
+	"github.com/noueii/no-frame-works/internal/app/infrastructure/identity"
 )
 
+// Handler is the strict-server implementation. Under the god-App pattern it
+// holds *config.App only; module APIs are read per-call via h.app.API().Post,
+// h.app.API().User, etc.
 type Handler struct {
 	oapi.StrictServerInterface
 
 	app      *config.App
 	identity identity.Client
-	postAPI  post.PostAPI
 }
 
+// NewHandler wires a new Handler. It does not construct any module services
+// itself — those live on app.API(), populated by the webserver wiring step
+// before this runs.
 func NewHandler(app *config.App) *Handler {
-	repo := postrepo.New(app.DB())
-	svc := postservice.New(repo)
-	api := postmw.NewPermissionLayer(svc, repo)
-
 	return &Handler{
 		app:      app,
 		identity: app.IdentityClient(),
-		postAPI:  api,
 	}
 }

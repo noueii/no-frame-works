@@ -16,6 +16,11 @@ import (
 
 	"github.com/noueii/no-frame-works/config"
 	"github.com/noueii/no-frame-works/generated/oapi"
+	postservice "github.com/noueii/no-frame-works/internal/app/services/post/service"
+	userservice "github.com/noueii/no-frame-works/internal/app/services/user/service"
+	postrepo "github.com/noueii/no-frame-works/repository/post"
+	userrepo "github.com/noueii/no-frame-works/repository/user"
+
 	"github.com/noueii/no-frame-works/internal/webserver/handler"
 	"github.com/noueii/no-frame-works/internal/webserver/middleware"
 )
@@ -25,7 +30,45 @@ type Webserver struct {
 	serverAddr string
 }
 
+// wireModules constructs every module's repository and service, and registers
+// the service APIs on the god-App. It runs once, at webserver construction
+// time, before any handler is built.
+//
+// Repositories are NOT registered on the App. Each repo is passed directly
+// into the service constructor that owns it, so the god-App never exposes a
+// way for one module to reach another module's repository. Cross-module work
+// is forced through app.API().Other.X — this is the only seam, and it always
+// goes through the target module's service.
+//
+// There is no authorization middleware. Services are registered bare; each
+// handler that needs auth checks performs them itself (e.g. reading the actor
+// from ctx and returning 401 if absent).
+//
+// After this function returns, app.API() is populated and any handler can
+// call app.API().Post.X or app.API().User.X.
+func wireModules(app *config.App) {
+	// Repositories — local variables only, never stored on the App.
+	pRepo := postrepo.New(app.DB())
+	uRepo := userrepo.New(app.DB())
+
+	// Services — each takes the App (for cross-module API access via
+	// app.API()) and its own repository as a directly injected field.
+	// Services cannot reach each other's repositories.
+	pSvc := postservice.New(app, pRepo)
+	uSvc := userservice.New(app, uRepo)
+
+	// Register the API container. After this line, app.API().Post.CreatePost
+	// and app.API().User.IncrementPostCount are callable from any handler or
+	// any other service that holds *config.App.
+	app.RegisterAPI(&config.API{
+		Post: pSvc,
+		User: uSvc,
+	})
+}
+
 func NewWebserver(app *config.App) *Webserver {
+	wireModules(app)
+
 	h := handler.NewHandler(app)
 	serverAddr := ":" + app.EnvVars().ServerPort()
 	encoderLevel := 1

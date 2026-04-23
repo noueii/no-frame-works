@@ -1,0 +1,18 @@
+{
+  "name": "go-backend-harness",
+  "version": "1.0.0",
+  "description": "Enforces no-frame-works layered architecture: handler/service/repository/domain separation, type isolation, and error handling conventions",
+  "author": {
+    "name": "noueii"
+  },
+  "homepage": "https://github.com/noueii/no-frame-works",
+  "license": "MIT",
+  "keywords": [
+    "go",
+    "backend",
+    "architecture",
+    "layered",
+    "harness"
+  ],
+  "skills": "./skills/"
+}

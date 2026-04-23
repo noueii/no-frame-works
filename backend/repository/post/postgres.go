@@ -3,7 +3,7 @@ package post
 import (
 	"database/sql"
 
-	postmod "github.com/noueii/no-frame-works/internal/modules/post"
+	postmod "github.com/noueii/no-frame-works/internal/app/services/post"
 )
 
 // PostgresPostRepository implements postmod.PostRepository using PostgreSQL with go-jet.

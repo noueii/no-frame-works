@@ -14,7 +14,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/noueii/no-frame-works/config/provider"
-	"github.com/noueii/no-frame-works/internal/infrastructure/identity"
+	"github.com/noueii/no-frame-works/internal/app/infrastructure/identity"
 )
 
 type App struct {
@@ -26,6 +26,18 @@ type App struct {
 	queue          *provider.AsynqProvider
 	sentry         *sentryhttp.Handler
 	identityClient identity.Client
+
+	// Cross-module service-API container. Populated by wiring code
+	// (webserver.wireModules) after the App is constructed but before any
+	// request is served.
+	//
+	// Repositories are deliberately NOT on the App. Each service receives its
+	// own repository directly via its constructor, so no module can reach
+	// another module's repo through the App. Cross-module access must go
+	// through app.API().Other.X — that's the only seam, and it's guaranteed
+	// to pass through the target module's service (and its invariants,
+	// validation, permission checks).
+	api *API
 }
 
 func NewApp() (*App, error) {
@@ -119,6 +131,22 @@ func (app *App) IdentityClient() identity.Client {
 
 func (app *App) UseTestIdentityClient() {
 	app.identityClient = identity.GetDefaultTestIdentityClient()
+}
+
+// API returns the registered service-API container.
+//
+// Access pattern: app.API().Post.CreatePost(ctx, req), app.API().User.GetUser(ctx, req).
+// Populated by webserver.wireModules before any handler runs.
+func (app *App) API() *API {
+	return app.api
+}
+
+// RegisterAPI installs the service-API container on the App. Called once, at
+// startup, by the webserver wiring function after every service has been
+// constructed (with its own repository injected directly via the service
+// constructor).
+func (app *App) RegisterAPI(api *API) {
+	app.api = api
 }
 
 const sentryFlushTimeout = 2 * time.Second
