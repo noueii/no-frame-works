@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/noueii/no-frame-works/internal/app/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
 	"github.com/noueii/no-frame-works/internal/app/domain"
 	usermod "github.com/noueii/no-frame-works/internal/app/services/user"
 )

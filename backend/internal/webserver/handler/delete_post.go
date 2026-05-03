@@ -7,14 +7,14 @@ import (
 	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
-	"github.com/noueii/no-frame-works/internal/app/apperrors"
-	"github.com/noueii/no-frame-works/internal/app/services/post"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
 )
 
 // DeletePost handles DELETE /posts/{id}.
 func (h *Handler) DeletePost(ctx context.Context, request oapi.DeletePostRequestObject) (oapi.DeletePostResponseObject, error) {
-	err := h.app.API().Post.DeletePost(ctx, post.DeletePostRequest{
-		ID: request.Id.String(),
+	err := h.app.API().Posts.DeletePost(ctx, &api.DeletePostOp{
+		Request: api.DeletePostRequest{ID: request.Id.String()},
 	})
 	if err != nil {
 		if errors.Is(err, apperrors.ErrNotFound) {

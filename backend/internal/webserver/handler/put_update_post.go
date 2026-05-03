@@ -7,16 +7,18 @@ import (
 	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
-	"github.com/noueii/no-frame-works/internal/app/apperrors"
-	"github.com/noueii/no-frame-works/internal/app/services/post"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
 )
 
 // PutUpdatePost handles PUT /posts/{id}.
 func (h *Handler) PutUpdatePost(ctx context.Context, request oapi.PutUpdatePostRequestObject) (oapi.PutUpdatePostResponseObject, error) {
-	result, err := h.app.API().Post.UpdatePost(ctx, post.UpdatePostRequest{
-		ID:      request.Id.String(),
-		Title:   request.Body.Title,
-		Content: request.Body.Content,
+	result, err := h.app.API().Posts.UpdatePost(ctx, &api.UpdatePostOp{
+		Request: api.UpdatePostRequest{
+			ID:      request.Id.String(),
+			Title:   request.Body.Title,
+			Content: request.Body.Content,
+		},
 	})
 	if err != nil {
 		switch {

@@ -1,6 +1,6 @@
 # Domain Layer Review Rubric
 
-You are reviewing domain code in a Go backend with a modular architecture. Each module has a `domain/` package that contains the module's internal models and business logic.
+You are reviewing domain code in a Go backend. Domain types are consolidated in `internal/app/domain/`, not per-service.
 
 The domain layer is the **heart of the module**. It defines the data structures and business rules. It has zero knowledge of infrastructure (databases, HTTP, external services).
 
@@ -8,7 +8,7 @@ The domain layer is the **heart of the module**. It defines the data structures 
 
 ### 1. No infrastructure imports
 
-Domain packages must not import any infrastructure packages — no database drivers, HTTP libraries, external SDKs, or framework code. Only standard library types (e.g. `time`, `errors`, `fmt`, `strings`) and other domain packages within the same module.
+Domain packages must not import any infrastructure packages — no database drivers, HTTP libraries, external SDKs, or framework code.
 
 ❌ Wrong:
 ```go
@@ -18,7 +18,6 @@ import (
     "database/sql"
     "net/http"
     "github.com/lib/pq"
-    "github.com/go-chi/chi/v5"
 )
 ```
 
@@ -29,7 +28,6 @@ package domain
 import (
     "time"
     "errors"
-    "fmt"
 )
 ```
 
@@ -39,15 +37,8 @@ Domain structs represent business entities. Methods on domain types must be pure
 
 ❌ Wrong:
 ```go
-func (p *Post) Save(db *sql.DB) error {
-    _, err := db.Exec("INSERT INTO posts ...")
-    return err
-}
-
-func (u *User) FetchProfile(client *http.Client) error {
-    resp, _ := client.Get("https://api.example.com/...")
-    // ...
-}
+func (p *Post) Save(db *sql.DB) error { ... }
+func (u *User) FetchProfile(client *http.Client) error { ... }
 ```
 
 ✅ Correct:
@@ -56,100 +47,55 @@ func (p *Post) IsOwnedBy(authorID string) bool {
     return p.AuthorID == authorID
 }
 
-func (u *User) CanEditUsername() bool {
-    return u.Username != "" && !u.IsLocked
+func (u *User) CanEdit() bool {
+    return !u.IsLocked
 }
 ```
 
-### 3. Sentinel errors in domain/errors.go
+### 3. User-facing errors use apperrors package
 
-Module-specific domain errors must be defined as sentinel errors in the module's `domain/errors.go` file. Not inline with `fmt.Errorf`, not in the module root, not in service files.
+Domain-specific sentinel errors live in `internal/app/core/apperrors/`, not in domain package. Use `apperrors.NotFound/Validation/Conflict/etc.` for user-facing errors.
 
-❌ Wrong — errors in module root:
+❌ Wrong — sentinel in domain:
 ```go
-// internal/modules/user/errors.go
-package user
-
-var ErrUserNotFound = errors.New("user not found")
+var ErrPostNotFound = errors.New("not found")
 ```
 
-❌ Wrong — errors created inline in service:
+✅ Correct — use shared apperrors:
 ```go
-func Execute(...) {
-    if existing == nil {
-        return user.UserView{}, fmt.Errorf("user not found")  // should be a sentinel error
-    }
-}
+apperrors.NotFound(apperrors.CodePostNotFound, "post not found", map[string]any{"post_id": id})
 ```
 
-✅ Correct:
-```go
-// internal/modules/user/domain/errors.go
-package domain
+### 4. Types in consolidated domain package
 
-import "errors"
-
-var (
-    ErrUserNotFound  = errors.New("user not found")
-    ErrUsernameTaken = errors.New("username is already taken")
-)
-```
-
-Note: `fmt.Errorf` wrapping of existing sentinel errors is fine in services (e.g. `fmt.Errorf("failed to find user: %w", err)`). Only flag `fmt.Errorf` that creates new domain error concepts.
-
-### 4. Types owned by their module
-
-Domain types live in the module that owns them. No shared domain packages. Modules must not import another module's `domain/` package.
+All domain types live in `internal/app/domain/`, not per-service. Services reference domain types, domain types don't reference other service types (use IDs for cross-service references).
 
 ❌ Wrong:
 ```go
-package domain
-
-import (
-    userdomain "github.com/noueii/no-frame-works/internal/modules/user/domain"
-)
-
 type Post struct {
-    Author userdomain.User  // importing another module's domain
+    Author user.User  // importing another service's type
 }
 ```
 
 ✅ Correct:
 ```go
-package domain
-
 type Post struct {
-    AuthorID string  // reference by ID, not by importing the other module's type
+    AuthorID string  // reference by ID
 }
 ```
 
 ### 5. Domain functions must be business logic
 
-If a function on a domain type doesn't express a business rule or business computation, it probably doesn't belong in the domain. Mapping functions (`toModel`, `toDomain`) belong in the repository. Formatting functions belong in the handler or a presentation layer.
+If a function on a domain type doesn't express a business rule or business computation, it doesn't belong in the domain. Mapping functions (`toModel`, `toDomain`) belong in the repository.
 
 ❌ Wrong:
 ```go
-// domain/models.go
-func (p *Post) ToJSON() ([]byte, error) {
-    return json.Marshal(p)  // presentation concern
-}
-
-func (p *Post) ToDBModel() model.Post {
-    return model.Post{Title: p.Title}  // persistence concern
-}
+func (p *Post) ToDBModel() model.Post { ... }  // repository concern
 ```
 
 ✅ Correct:
 ```go
-// domain/models.go
-func (p *Post) IsPublished() bool {
-    return p.PublishedAt != nil && p.PublishedAt.Before(time.Now())
-}
-
-// repository/post/create.go — mapping lives here
-func toModel(p domain.Post) model.Post {
-    return model.Post{Title: p.Title, Content: p.Content}
-}
+func (p *Post) IsOwnedBy(authorID string) bool { ... }  // business logic
 ```
 
 ## Output Format

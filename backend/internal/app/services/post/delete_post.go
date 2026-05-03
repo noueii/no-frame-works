@@ -5,41 +5,30 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/noueii/no-frame-works/internal/app/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
 )
 
-// DeletePostRequest is the request to delete a post.
-type DeletePostRequest struct {
-	ID string
-}
-
-func (r DeletePostRequest) Validate() error {
-	if r.ID == "" {
+func (s *Service) DeletePost(ctx context.Context, op *api.DeletePostOp) error {
+	if op.Request.ID == "" {
 		return apperrors.Validation(apperrors.CodePostIDRequired, "id is required", nil)
 	}
-	return nil
-}
 
-// Run validates, ensures the post exists, and removes it. The pre-delete
-// FindByID is intentional: it turns "delete of nonexistent post" into a 404
-// rather than a silent success, which matches what most clients expect.
-func (r DeletePostRequest) Run(ctx context.Context, repo PostRepository) error {
-	if err := r.Validate(); err != nil {
-		return errors.Errorf("post.DeletePostRequest.Run: validate: %w", err)
-	}
-	existing, err := repo.FindByID(ctx, r.ID)
+	existing, err := s.repo.FindByID(ctx, op.Request.ID)
 	if err != nil {
-		return errors.Errorf("post.DeletePostRequest.Run: load existing id=%s: %w", r.ID, err)
+		return errors.Errorf("service.post.DeletePost: load existing id=%s: %w", op.Request.ID, err)
 	}
 	if existing == nil {
 		return apperrors.NotFound(
 			apperrors.CodePostNotFound,
 			"post not found",
-			map[string]any{"post_id": r.ID},
+			map[string]any{"post_id": op.Request.ID},
 		)
 	}
-	if err := repo.Delete(ctx, r.ID); err != nil {
-		return errors.Errorf("post.DeletePostRequest.Run: repo delete id=%s: %w", r.ID, err)
+
+	op.Post = existing
+	if err := s.repo.Delete(ctx, op.Request.ID); err != nil {
+		return errors.Errorf("service.post.DeletePost: repo delete id=%s: %w", op.Request.ID, err)
 	}
 	return nil
 }

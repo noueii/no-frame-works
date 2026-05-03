@@ -5,34 +5,19 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/noueii/no-frame-works/internal/app/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
 	"github.com/noueii/no-frame-works/internal/app/domain"
 )
 
-// ListPostsRequest is the request to list posts by author.
-type ListPostsRequest struct {
-	AuthorID string
-}
-
-func (r ListPostsRequest) Validate() error {
-	if r.AuthorID == "" {
-		return apperrors.Validation(apperrors.CodePostAuthorIDRequired, "author_id is required", nil)
+func (s *Service) ListPosts(ctx context.Context, op *api.ListPostsOp) ([]domain.Post, error) {
+	if op.Request.AuthorID == "" {
+		return nil, apperrors.Validation(apperrors.CodePostAuthorIDRequired, "author_id is required", nil)
 	}
-	return nil
-}
 
-func (r ListPostsRequest) Permission() Permission {
-	return PermPostList
-}
-
-// Run validates and returns every post for the given author.
-func (r ListPostsRequest) Run(ctx context.Context, repo PostRepository) ([]domain.Post, error) {
-	if err := r.Validate(); err != nil {
-		return nil, errors.Errorf("post.ListPostsRequest.Run: validate: %w", err)
-	}
-	posts, err := repo.ListByAuthor(ctx, r.AuthorID)
+	posts, err := s.repo.ListByAuthor(ctx, op.Request.AuthorID)
 	if err != nil {
-		return nil, errors.Errorf("post.ListPostsRequest.Run: repo list author=%s: %w", r.AuthorID, err)
+		return nil, errors.Errorf("service.post.ListPosts: repo list author=%s: %w", op.Request.AuthorID, err)
 	}
 	return posts, nil
 }

@@ -1,13 +1,13 @@
 # Service Layer Review Rubric
 
-You are reviewing service code in a Go backend with a modular architecture. Each module exposes a public API interface that is the only way to interact with the module.
+You are reviewing service code in a Go backend with a modular architecture.
 
-Services contain **business logic**. They validate input, orchestrate operations, and return results. They are accessed exclusively through the module's API interface.
+Services are accessed exclusively through the module's API interface in `services/api/`. Each service implements its interface and holds business logic.
 
 ## Allowed types
 
 Services may only work with:
-- **API contract types** (request structs + view types from `api.go`) — for input/output
+- **API Op types** from `services/api/` (e.g. `*api.CreatePostOp`)
 - **Domain models** (`domain.*`) — for internal business logic
 
 Services must NOT import or use:
@@ -16,201 +16,141 @@ Services must NOT import or use:
 
 ## Rules
 
-### 1. Validate first, then check permission
+### 1. Op holds Request + State
 
-Every service function must call `req.Validate()` first, then `req.CheckPermission(...)`. There is no separate permission middleware layer — permission checking lives on the request type and is called in the service function.
+Ops live in `services/api/` and have two parts:
 
-**Simple case** — no model needed for permission check:
 ```go
-func CreatePost(ctx context.Context, repo post.PostRepository, req post.CreatePostRequest) (*post.PostView, error) {
-    if err := req.Validate(); err != nil { return nil, err }
-    if err := req.CheckPermission(ctx); err != nil { return nil, err }
-    // business logic...
+// services/api/post.go
+type CreatePostOp struct {
+    Request CreatePostRequest  // input fields
+    Post    *domain.Post        // state populated during execution
 }
 ```
 
-**Ownership case** — model needed for permission check (e.g. "is this actor the author?"):
-```go
-func UpdatePost(ctx context.Context, repo post.PostRepository, req post.UpdatePostRequest) (*post.PostView, error) {
-    if err := req.Validate(); err != nil { return nil, err }
+Service methods receive `*api.CreatePostOp`. Validation uses `op.Request.Field`. State is stored in op fields like `op.Post`.
 
-    existing, err := repo.FindByID(ctx, req.ID)
-    if err != nil { ... }
-    if existing == nil { return nil, post.ErrPostNotFound }
+### 2. Inline validation, no Op.Validate()
 
-    if err := req.CheckPermission(ctx, existing); err != nil { return nil, err }
-    // mutate and save...
-}
-```
-
-The `CheckPermission` signature varies by request type — some take only `ctx`, others take `ctx` + the domain model. The domain model owns the authorization rule (e.g. `post.CanModify(actor)`) and `CheckPermission` delegates to it.
-
-### 2. Services only accessible through the module API
-
-Services must only be called through the module's exported API interface (e.g. `post.PostAPI`). No external code should import a service package directly to call it.
+Validation is done inline in the service method using `op.Request.Field == ""` checks. No `Validate()` method on Op.
 
 ❌ Wrong:
 ```go
-import postservice "github.com/noueii/no-frame-works/internal/modules/post/service"
-
-// Calling service directly from outside the module
-svc := postservice.New(repo)
-svc.CreatePost(ctx, req)
+if err := op.Validate(); err != nil { return nil, err }
 ```
 
 ✅ Correct:
 ```go
-import "github.com/noueii/no-frame-works/internal/modules/post"
-
-// Call through the module's API interface
-var api post.PostAPI
-api.CreatePost(ctx, req)
-```
-
-### 3. Request structs own Validate() and CheckPermission()
-
-Every request struct must implement `Validate() error` and `CheckPermission(...) error`. These are defined on the request type in the module's `api.go` file, not in the service.
-
-`CheckPermission` signature varies by case:
-- Simple (actor/role check only): `CheckPermission(ctx context.Context) error`
-- Ownership check: `CheckPermission(ctx context.Context, model *domain.Model) error`
-
-The domain model owns authorization rules as pure methods (e.g. `CanModify(actor.Actor) bool`). `CheckPermission` calls these domain methods.
-
-```go
-// api.go — simple permission
-func (r CreatePostRequest) CheckPermission(ctx context.Context) error {
-    a := actor.ActorFrom(ctx)
-    if a == nil { return ErrUnauthorized }
-    return nil
-}
-
-// api.go — ownership permission, delegates to domain
-func (r UpdatePostRequest) CheckPermission(ctx context.Context, post *domain.Post) error {
-    a := actor.ActorFrom(ctx)
-    if a == nil { return ErrUnauthorized }
-    if !post.CanModify(a) { return ErrForbidden }
-    return nil
-}
-
-// domain/post.go — pure business rule
-func (p Post) CanModify(a actor.Actor) bool {
-    if a.IsSystem() { return true }
-    if ua, ok := a.(actor.UserActor); ok && ua.HasRole(actor.RoleAdmin) { return true }
-    return p.AuthorID == a.UserID().String()
+if op.Request.Title == "" {
+    return nil, apperrors.Validation(apperrors.CodePostTitleRequired, "title is required", nil)
 }
 ```
 
-### 4. One function per file in service subfolders
+### 3. One service method per file in service subfolders
 
-Each file in a service subfolder (e.g. `service/create_post/create_post.go`) must contain exactly one exported function named after the operation (not `Execute`). The root `service/service.go` is the only file that can have multiple methods.
+Each operation has its own file. The `api.go` defines the `Service` struct and implements `api.PostAPI`. Each `*_post.go` file contains one service method.
 
-❌ Wrong:
 ```go
-// service/create_post/create_post.go
-func Execute(...) { ... }  // generic name — use the operation name
-```
-
-✅ Correct:
-```go
-// service/create_post/create_post.go
-func CreatePost(ctx context.Context, repo post.PostRepository, req post.CreatePostRequest) (*post.PostView, error) {
-    // single responsibility: create a post
+// services/post/api.go
+type Service struct {
+    app  *config.App
+    repo PostRepository
 }
-```
+func (s *Service) CreatePost(ctx context.Context, op *api.CreatePostOp) (*domain.Post, error)
 
-### 5. Services use domain types internally
-
-Service functions work with domain models from the module's `domain/` package for internal logic. They accept request structs as input and return view types as output — never domain models.
-
-❌ Wrong:
-```go
-// Returning a domain model to the caller
-func CreatePost(ctx context.Context, repo post.PostRepository, req post.CreatePostRequest) (*domain.Post, error) {
-    // domain types should not leak outside the service
-}
-```
-
-✅ Correct:
-```go
-func CreatePost(ctx context.Context, repo post.PostRepository, req post.CreatePostRequest) (*post.PostView, error) {
+// services/post/create_post.go
+func (s *Service) CreatePost(ctx context.Context, op *api.CreatePostOp) (*domain.Post, error) {
+    if op.Request.Title == "" { ... }
     // ...
-    return &post.PostView{
-        ID:       created.ID,
-        Title:    created.Title,
-        Content:  created.Content,
-        AuthorID: created.AuthorID,
-    }, nil
 }
 ```
 
-Service functions return pointers to view types. On error paths, return `nil, err` — never empty structs.
+### 4. Cross-service calls through App.API()
+
+When a service needs to call another service, it uses `s.app.API().Users.IncrementPostCount(...)`.
+
+❌ Wrong — direct repo access to another service's data:
+```go
+s.userRepo.IncrementPostCount(...)
+```
+
+✅ Correct — through the API interface:
+```go
+s.app.API().Users.IncrementPostCount(ctx, &api.IncrementPostCountOp{
+    Request: api.IncrementPostCountRequest{UserID: op.Request.AuthorID},
+})
+```
+
+### 5. State flows through Op
+
+Service populates state fields on the Op so the caller can access them:
+
+```go
+func (s *Service) GetPost(ctx context.Context, op *api.GetPostOp) (*domain.Post, error) {
+    post, err := s.repo.FindByID(ctx, op.Request.ID)
+    // ...
+    op.Post = post  // caller can access op.Post
+    return post, nil
+}
+```
 
 ### 6. Constructor injection
 
-Service structs receive their dependencies (repositories, providers) through the constructor. They never create dependencies internally.
+Service struct receives dependencies through the constructor:
 
-❌ Wrong:
 ```go
-func (s *Service) CreatePost(ctx context.Context, req post.CreatePostRequest) (post.PostView, error) {
-    repo := postrepo.New(s.db)  // creating dependency inside method
-    return createpost.Execute(ctx, repo, req)
+func New(app *config.App, repo PostRepository) *Service {
+    return &Service{app: app, repo: repo}
 }
 ```
 
-✅ Correct:
-```go
-func New(repo post.PostRepository) *Service {
-    return &Service{repo: repo}
-}
+Never create dependencies inside service methods.
 
-func (s *Service) CreatePost(ctx context.Context, req post.CreatePostRequest) (post.PostView, error) {
-    return createpost.Execute(ctx, s.repo, req)
+### 7. Domain model is source of truth for updates
+
+For updates: fetch existing domain model → mutate fields → save complete model.
+
+```go
+func (s *Service) UpdatePost(ctx context.Context, op *api.UpdatePostOp) (*domain.Post, error) {
+    existing, err := s.repo.FindByID(ctx, op.Request.ID)
+    if err != nil { return nil, err }
+    
+    op.Post = existing  // store state
+    op.Post.Title = op.Request.Title
+    op.Post.Content = op.Request.Content
+    
+    updated, err := s.repo.Update(ctx, *op.Post)
+    return updated, nil
 }
 ```
 
-### 7. Domain model is the source of truth
+## API Structure
 
-All operations go through the domain model. For updates: fetch the existing model from the repo, mutate its fields directly in memory, then send the complete model to the repo. The repository always receives a full domain model — never loose fields or partial objects.
-
-For cross-module side effects (e.g. updating a user counter when a post is published), the service orchestrates by calling the other module's API. The domain model itself does not reach across modules.
-
-❌ Wrong — bypassing the domain model with loose fields:
 ```go
-func EditUsername(ctx context.Context, repo user.UserRepository, req user.EditUsernameRequest) (*user.UserView, error) {
-    if err := req.Validate(); err != nil { ... }
-    updated, err := repo.UpdateUsername(ctx, req.UserID, req.Username)
-    return &user.UserView{ID: updated.ID, Username: updated.Username}, nil
+// services/api/post.go
+type CreatePostRequest struct {
+    Title    string
+    Content  string
+    AuthorID string
 }
-```
 
-✅ Correct:
-```go
-func UpdatePost(ctx context.Context, repo post.PostRepository, req post.UpdatePostRequest) (*post.PostView, error) {
-    if err := req.Validate(); err != nil { return nil, err }
-
-    existing, err := repo.FindByID(ctx, req.ID)
-    if err != nil { ... }
-    if existing == nil { return nil, post.ErrPostNotFound }
-
-    if err := req.CheckPermission(ctx, existing); err != nil { return nil, err }
-
-    existing.Title = req.Title
-    existing.Content = req.Content
-
-    updated, err := repo.Update(ctx, *existing)
-    if err != nil { ... }
-
-    return &post.PostView{
-        ID:       updated.ID,
-        Title:    updated.Title,
-        Content:  updated.Content,
-        AuthorID: updated.AuthorID,
-    }, nil
+type CreatePostOp struct {
+    Request CreatePostRequest
 }
-```
 
-Note: This applies to updates. For creates, the service builds a new domain model from the request fields since no existing model exists yet.
+type PostAPI interface {
+    CreatePost(ctx context.Context, op *CreatePostOp) (*domain.Post, error)
+    GetPost(ctx context.Context, op *GetPostOp) (*domain.Post, error)
+    // ...
+}
+
+// services/post/api.go
+type Service struct {
+    app  *config.App
+    repo PostRepository
+}
+var _ api.PostAPI = (*Service)(nil)
+```
 
 ## Output Format
 

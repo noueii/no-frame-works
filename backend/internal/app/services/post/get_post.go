@@ -5,42 +5,27 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/noueii/no-frame-works/internal/app/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
 	"github.com/noueii/no-frame-works/internal/app/domain"
 )
 
-// GetPostRequest is the request to get a post by ID.
-type GetPostRequest struct {
-	ID string
-}
-
-func (r GetPostRequest) Validate() error {
-	if r.ID == "" {
-		return apperrors.Validation(apperrors.CodePostIDRequired, "id is required", nil)
+func (s *Service) GetPost(ctx context.Context, op *api.GetPostOp) (*domain.Post, error) {
+	if op.Request.ID == "" {
+		return nil, apperrors.Validation(apperrors.CodePostIDRequired, "id is required", nil)
 	}
-	return nil
-}
 
-func (r GetPostRequest) Permission() Permission {
-	return PermPostView
-}
-
-// Run validates and fetches a post by ID, returning apperrors.NotFound when
-// the row is missing so handlers can map it to 404 via errors.Is.
-func (r GetPostRequest) Run(ctx context.Context, repo PostRepository) (*domain.Post, error) {
-	if err := r.Validate(); err != nil {
-		return nil, errors.Errorf("post.GetPostRequest.Run: validate: %w", err)
-	}
-	found, err := repo.FindByID(ctx, r.ID)
+	post, err := s.repo.FindByID(ctx, op.Request.ID)
 	if err != nil {
-		return nil, errors.Errorf("post.GetPostRequest.Run: repo find id=%s: %w", r.ID, err)
+		return nil, errors.Errorf("service.post.GetPost: repo find id=%s: %w", op.Request.ID, err)
 	}
-	if found == nil {
+	if post == nil {
 		return nil, apperrors.NotFound(
 			apperrors.CodePostNotFound,
 			"post not found",
-			map[string]any{"post_id": r.ID},
+			map[string]any{"post_id": op.Request.ID},
 		)
 	}
-	return found, nil
+	op.Post = post
+	return post, nil
 }

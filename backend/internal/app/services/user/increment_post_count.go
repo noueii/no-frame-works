@@ -1,19 +1,21 @@
 package user
 
 import (
-	"github.com/noueii/no-frame-works/internal/app/apperrors"
+	"context"
+
+	"github.com/go-errors/errors"
+
+	"github.com/noueii/no-frame-works/internal/app/services/api"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
 )
 
-// IncrementPostCountOp is the cross-service op issued by the post service
-// when a post is created, to keep the user's denormalized post count in
-// sync. Public input fields only — *Service does the work.
-type IncrementPostCountOp struct {
-	UserID string
-}
-
-func (op *IncrementPostCountOp) Validate() error {
-	if op.UserID == "" {
+func (s *Service) IncrementPostCount(ctx context.Context, op *api.IncrementPostCountOp) error {
+	if op.Request.UserID == "" {
 		return apperrors.Validation(apperrors.CodeUserIDRequired, "user id is required", nil)
+	}
+
+	if err := s.repo.IncrementPostCount(ctx, op.Request.UserID); err != nil {
+		return errors.Errorf("service.user.IncrementPostCount: repo increment id=%s: %w", op.Request.UserID, err)
 	}
 	return nil
 }

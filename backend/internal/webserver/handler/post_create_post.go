@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 	"github.com/noueii/no-frame-works/internal/app/core/actor"
-	"github.com/noueii/no-frame-works/internal/app/services/post"
 )
 
 // PostCreatePost handles POST /posts.
@@ -15,10 +15,12 @@ func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePos
 		return oapi.PostCreatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "unauthorized"}}, nil
 	}
 
-	result, err := h.app.API().Post.CreatePost(ctx, &post.CreatePostOp{
-		Title:    request.Body.Title,
-		Content:  request.Body.Content,
-		AuthorID: a.UserID().String(),
+	result, err := h.app.API().Posts.CreatePost(ctx, &api.CreatePostOp{
+		Request: api.CreatePostRequest{
+			Title:    request.Body.Title,
+			Content:  request.Body.Content,
+			AuthorID: a.UserID().String(),
+		},
 	})
 	if err != nil {
 		return oapi.PostCreatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()}}, nil

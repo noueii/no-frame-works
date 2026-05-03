@@ -2,17 +2,18 @@
 
 You are reviewing handler code in a Go backend that uses oapi-codegen for strict typed HTTP handlers.
 
-Handlers are **pure transformers** between the OpenAPI contract and the service layer. They receive oapi-generated request objects, map fields to service request structs, call the module API, and map the result back to oapi response types. Nothing else.
+Handlers are **pure transformers** between the OpenAPI contract and the service layer. They receive oapi-generated request objects, map fields to service Op structs, call the module API, and map the result back to oapi response types. Nothing else.
 
 ## Allowed types
 
 Handlers may only work with:
 - **oapi-codegen generated types** (`oapi.*`) — for request/response
-- **Module API contract types** (e.g. `post.CreatePostRequest`, `post.PostView`) — for calling services
+- **API Op types** from `services/api/` (e.g. `api.CreatePostOp`) — for calling services
 
 Handlers must NOT import or use:
 - Domain models (`domain.*`)
 - Database/go-jet models (`model.*`)
+- oapi types from api (requests are built inline)
 
 ## Rules
 
@@ -24,11 +25,7 @@ Handler methods must receive and return oapi-codegen generated request/response 
 ```go
 func (h *Handler) editUsername(w http.ResponseWriter, r *http.Request) {
     var body editUsernameBody
-    if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-        http.Error(w, "invalid request body", http.StatusBadRequest)
-        return
-    }
-    // ...
+    json.NewDecoder(r.Body).Decode(&body)
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(result)
 }
@@ -40,16 +37,15 @@ func (h *Handler) PutUpdatePost(
     ctx context.Context,
     request oapi.PutUpdatePostRequestObject,
 ) (oapi.PutUpdatePostResponseObject, error) {
-    // ...
     return oapi.PutUpdatePost200JSONResponse(toOAPIPost(result)), nil
 }
 ```
 
-### 2. Transform, don't validate
+### 2. Transform to Op, don't validate
 
-Handlers map oapi fields to service request structs and map service results back to oapi response types. No business logic, no validation, no DB calls, no permission checks.
+Handlers map oapi fields to service Op structs. No business logic, no validation, no DB calls, no permission checks.
 
-❌ Wrong:
+❌ Wrong — handler validates:
 ```go
 func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePostRequestObject) (oapi.PostCreatePostResponseObject, error) {
     if request.Body.Title == "" {
@@ -59,7 +55,7 @@ func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePos
 }
 ```
 
-❌ Wrong:
+❌ Wrong — handler calls repo directly:
 ```go
 func (h *Handler) GetPost(ctx context.Context, request oapi.GetPostRequestObject) (oapi.GetPostResponseObject, error) {
     post, err := h.repo.FindByID(ctx, request.Id.String())
@@ -67,43 +63,42 @@ func (h *Handler) GetPost(ctx context.Context, request oapi.GetPostRequestObject
 }
 ```
 
-✅ Correct:
+✅ Correct — handler builds Op with Request:
 ```go
 func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePostRequestObject) (oapi.PostCreatePostResponseObject, error) {
-    result, err := h.postAPI.CreatePost(ctx, post.CreatePostRequest{
-        Title:    request.Body.Title,
-        Content:  request.Body.Content,
-        AuthorID: a.UserID().String(),
+    result, err := h.app.API().Posts.CreatePost(ctx, &api.CreatePostOp{
+        Request: api.CreatePostRequest{
+            Title:    request.Body.Title,
+            Content:  request.Body.Content,
+            AuthorID: a.UserID().String(),
+        },
     })
     if err != nil {
-        return oapi.PostCreatePost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()}}, nil
+        return oapi.PostCreatePost400JSONResponse{...}, nil
     }
     return oapi.PostCreatePost201JSONResponse(toOAPIPost(result)), nil
 }
 ```
 
-### 3. Call the module API interface
+### 3. Access services through App.API()
 
-Handlers call the module's exported API interface (e.g. `post.PostAPI`), never a concrete service or repository directly. The handler struct field must be typed as the interface.
+Handlers access services via `h.app.API().Posts.CreatePost(...)`. The API struct holds typed service interfaces (not `any`).
 
-❌ Wrong:
+❌ Wrong — concrete types:
 ```go
 type Handler struct {
-    postService *service.Service       // concrete type
-    postRepo    *postrepo.PostgresRepo  // direct repo access
+    postService *post.Service       // concrete type
 }
 ```
 
-✅ Correct:
+✅ Correct — through App.API():
 ```go
-type Handler struct {
-    postAPI post.PostAPI  // interface
-}
+h.app.API().Posts.CreatePost(ctx, &api.CreatePostOp{...})
 ```
 
 ### 4. Error mapping only
 
-Handlers translate service errors to the appropriate HTTP response type. They do not create new errors or wrap errors with `fmt.Errorf`.
+Handlers translate service errors to the appropriate HTTP response type. They do not create new errors or wrap errors.
 
 ❌ Wrong:
 ```go
@@ -115,37 +110,44 @@ if err != nil {
 ✅ Correct:
 ```go
 if err != nil {
-    if errors.Is(err, post.ErrPostNotFound) {
-        return oapi.GetPost404JSONResponse{Error: "post not found"}, nil
+    if errors.Is(err, apperrors.ErrNotFound) {
+        return oapi.GetPost404JSONResponse{...}, nil
     }
-    return oapi.GetPost400JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: err.Error()}}, nil
+    return oapi.GetPost400JSONResponse{...}, nil
 }
 ```
 
 ### 5. No dependency creation
 
-Handlers receive all dependencies through the constructor. They never call `New()` or instantiate services/repos internally.
+Handlers receive all dependencies through `*config.App`. They call `h.app.API().ServiceName.Method()` — services are wired once at startup, not per-request.
 
 ❌ Wrong:
 ```go
-func (h *Handler) PostCreatePost(ctx context.Context, request oapi.PostCreatePostRequestObject) (oapi.PostCreatePostResponseObject, error) {
-    repo := postrepo.New(h.app.DB())
-    svc := postservice.New(repo)
+func (h *Handler) PostCreatePost(ctx context.Context, ...) {
+    svc := post.New(app, repo)  // creating service per request
     result, err := svc.CreatePost(ctx, ...)
 }
 ```
 
 ✅ Correct:
 ```go
-// Dependencies injected at construction time
-func NewHandler(app *config.App) *Handler {
-    repo := postrepo.New(app.DB())
-    svc := postservice.New(repo)
-    return &Handler{
-        postAPI: svc,
-    }
+// services wired in webserver.wireModules(), handler uses app
+result, err := h.app.API().Posts.CreatePost(ctx, &api.CreatePostOp{...})
+```
+
+## Op Structure
+
+Ops live in `services/api/` and have two parts:
+
+```go
+// services/api/post.go
+type CreatePostOp struct {
+    Request CreatePostRequest  // what caller provides
+    Post    *domain.Post        // state populated by service
 }
 ```
+
+Handlers only set `Request`. Service populates state fields like `Post`.
 
 ## Output Format
 

@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
-	"github.com/noueii/no-frame-works/internal/app/services/post"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 )
 
 // GetPosts handles GET /posts with optional authorId query param.
 func (h *Handler) GetPosts(ctx context.Context, request oapi.GetPostsRequestObject) (oapi.GetPostsResponseObject, error) {
 	if request.Params.AuthorId != nil {
-		results, err := h.app.API().Post.ListPosts(ctx, post.ListPostsRequest{
-			AuthorID: request.Params.AuthorId.String(),
+		results, err := h.app.API().Posts.ListPosts(ctx, &api.ListPostsOp{
+			Request: api.ListPostsRequest{AuthorID: request.Params.AuthorId.String()},
 		})
 		if err != nil {
 			return nil, err
@@ -19,7 +19,7 @@ func (h *Handler) GetPosts(ctx context.Context, request oapi.GetPostsRequestObje
 		return oapi.GetPosts200JSONResponse(toOAPIPosts(results)), nil
 	}
 
-	results, err := h.app.API().Post.ListAllPosts(ctx, post.ListAllPostsRequest{})
+	results, err := h.app.API().Posts.ListAllPosts(ctx)
 	if err != nil {
 		return nil, err
 	}

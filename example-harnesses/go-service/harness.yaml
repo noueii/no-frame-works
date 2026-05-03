@@ -1,0 +1,18 @@
+name: go-service
+version: "1.0.0"
+description: Standard Go service architecture harness
+author: team
+
+files:
+  - source: .agents/rules/domain.md
+    target: .agents/rules/domain-go.md
+  - source: .agents/rules/service.md
+    target: .agents/rules/service-go.md
+
+scripts:
+  test: Run all tests
+  build: Build the service
+  lint: Run linters
+
+env:
+  GO111MODULE: "on"
