@@ -46,7 +46,10 @@ func (c *KratosClient) Login(ctx context.Context, email, password string) (*Sess
 	return &SessionResult{SessionToken: login.GetSessionToken()}, nil
 }
 
-func (c *KratosClient) Register(ctx context.Context, email, password string) (*SessionResult, error) {
+func (c *KratosClient) Register(
+	ctx context.Context,
+	email, password string,
+) (*SessionResult, error) {
 	flow, _, err := c.client.FrontendAPI.CreateNativeRegistrationFlow(ctx).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create registration flow: %w", err)

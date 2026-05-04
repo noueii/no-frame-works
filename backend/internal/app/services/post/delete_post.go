@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/noueii/no-frame-works/internal/app/services/api"
 	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 )
 
 func (s *Service) DeletePost(ctx context.Context, op *api.DeletePostOp) error {

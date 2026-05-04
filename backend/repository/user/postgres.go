@@ -64,7 +64,10 @@ func (r *PostgresUserRepository) FindByID(_ context.Context, id string) (*domain
 
 func (r *PostgresUserRepository) IncrementPostCount(_ context.Context, userID string) error {
 	if userID == "" {
-		return errors.Errorf("repo.user.IncrementPostCount: empty userID: %w", apperrors.ErrValidation)
+		return errors.Errorf(
+			"repo.user.IncrementPostCount: empty userID: %w",
+			apperrors.ErrValidation,
+		)
 	}
 	r.mu.Lock()
 	r.postCounts[userID]++

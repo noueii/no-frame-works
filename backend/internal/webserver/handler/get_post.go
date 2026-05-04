@@ -7,12 +7,15 @@ import (
 	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
-	"github.com/noueii/no-frame-works/internal/app/services/api"
 	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 )
 
 // GetPost handles GET /posts/{id}.
-func (h *Handler) GetPost(ctx context.Context, request oapi.GetPostRequestObject) (oapi.GetPostResponseObject, error) {
+func (h *Handler) GetPost(
+	ctx context.Context,
+	request oapi.GetPostRequestObject,
+) (oapi.GetPostResponseObject, error) {
 	result, err := h.app.API().Posts.GetPost(ctx, &api.GetPostOp{
 		Request: api.GetPostRequest{ID: request.Id.String()},
 	})

@@ -1,0 +1,14 @@
+{
+  "name": "rules-injector",
+  "version": "1.0.0",
+  "description": "Inject relevant rules based on file patterns",
+  "main": "src/index.ts",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "dependencies": {
+    "glob": "^13.0.6"
+  }
+}

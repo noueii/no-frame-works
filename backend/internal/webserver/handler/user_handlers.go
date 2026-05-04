@@ -9,12 +9,15 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
-	"github.com/noueii/no-frame-works/internal/app/services/api"
 	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 )
 
 // GetUser handles GET /users/{id}.
-func (h *Handler) GetUser(ctx context.Context, request oapi.GetUserRequestObject) (oapi.GetUserResponseObject, error) {
+func (h *Handler) GetUser(
+	ctx context.Context,
+	request oapi.GetUserRequestObject,
+) (oapi.GetUserResponseObject, error) {
 	result, err := h.app.API().Users.GetUser(ctx, &api.GetUserOp{
 		Request: api.GetUserRequest{ID: request.Id.String()},
 	})

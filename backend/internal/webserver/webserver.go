@@ -102,8 +102,8 @@ func (ws *Webserver) Start() error {
 
 	headerTimeout := 3
 	s := &http.Server{
-		Handler:      ws.router,
-		Addr:         ws.serverAddr,
+		Handler: ws.router,
+		Addr:    ws.serverAddr,
 		ReadHeaderTimeout: time.Duration(
 			headerTimeout,
 		) * time.Second,

@@ -14,8 +14,8 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/noueii/no-frame-works/config/provider"
-	"github.com/noueii/no-frame-works/internal/app/services/api"
 	"github.com/noueii/no-frame-works/internal/app/infrastructure/identity"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 )
 
 type App struct {
