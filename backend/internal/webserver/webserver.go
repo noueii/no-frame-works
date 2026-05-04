@@ -16,6 +16,11 @@ import (
 
 	"github.com/noueii/no-frame-works/config"
 	"github.com/noueii/no-frame-works/generated/oapi"
+	"github.com/noueii/no-frame-works/internal/app/services/post"
+	"github.com/noueii/no-frame-works/internal/app/services/user"
+	postrepo "github.com/noueii/no-frame-works/repository/post"
+	userrepo "github.com/noueii/no-frame-works/repository/user"
+
 	"github.com/noueii/no-frame-works/internal/webserver/handler"
 	"github.com/noueii/no-frame-works/internal/webserver/middleware"
 )
@@ -25,7 +30,25 @@ type Webserver struct {
 	serverAddr string
 }
 
+// wireModules constructs every module's repository and service, and registers
+// the service APIs on the App. It runs once, at webserver construction time,
+// before any handler is built.
+func wireModules(app *config.App) {
+	pRepo := postrepo.New(app.DB())
+	uRepo := userrepo.New(app.DB())
+
+	pSvc := post.New(app, pRepo)
+	uSvc := user.New(app, uRepo)
+
+	app.RegisterAPI(&config.API{
+		Posts: pSvc,
+		Users: uSvc,
+	})
+}
+
 func NewWebserver(app *config.App) *Webserver {
+	wireModules(app)
+
 	h := handler.NewHandler(app)
 	serverAddr := ":" + app.EnvVars().ServerPort()
 	encoderLevel := 1

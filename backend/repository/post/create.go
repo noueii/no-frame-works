@@ -6,7 +6,7 @@ import (
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
-	"github.com/noueii/no-frame-works/internal/modules/post/domain"
+	"github.com/noueii/no-frame-works/internal/app/domain"
 )
 
 func (r *PostgresPostRepository) Create(ctx context.Context, p domain.Post) (*domain.Post, error) {

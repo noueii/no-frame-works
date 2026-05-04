@@ -1,0 +1,182 @@
+version: 3
+
+workdir: .
+allow:
+  depOnAnyVendor: true
+  deepScan: true
+
+excludeFiles:
+  - "^.*_test\\.go$"
+  - "^.*\\/test\\/.*$"
+
+components:
+  domain:
+    in:
+      - "internal/app/domain"
+  
+  apperrors:
+    in:
+      - "internal/app/core/apperrors"
+  
+  service:
+    in:
+      - "internal/app/services/post"
+      - "internal/app/services/user"
+  
+  handler:
+    in:
+      - "internal/webserver/handler"
+  
+  api:
+    in:
+      - "internal/app/services/api"
+  
+  config:
+    in:
+      - "config/"
+      - "config/provider/"
+      - "config/provider"
+  
+  infrastructure:
+    in:
+      - "internal/app/infrastructure"
+      - "internal/app/infrastructure/identity"
+  
+  middleware:
+    in:
+      - "internal/webserver/middleware"
+      - "internal/worker/middleware"
+  
+  webserver:
+    in:
+      - "internal/webserver"
+  
+  worker:
+    in:
+      - "internal/worker"
+  
+  generated:
+    in:
+      - "generated"
+      - "generated/oapi"
+  
+  repository:
+    in:
+      - "repository"
+      - "repository/post"
+      - "repository/user"
+  
+  db:
+    in:
+      - "db"
+      - "db/no_frame_works/public/model"
+      - "db/no_frame_works/public/table"
+  
+  core:
+    in:
+      - "internal/app/core"
+      - "internal/app/core/actor"
+      - "internal/app/core/tx"
+  
+  cmd:
+    in:
+      - "cmd/webserver"
+      - "cmd/worker"
+
+deps:
+  apperrors:
+    mayDependOn:
+      - domain
+
+  service:
+    mayDependOn:
+      - domain
+      - apperrors
+      - api
+      - config
+      - core
+      - infrastructure
+
+  handler:
+    mayDependOn:
+      - service
+      - api
+      - apperrors
+      - generated
+      - infrastructure
+      - middleware
+      - config
+      - core
+      - domain
+      - repository
+
+  api:
+    mayDependOn:
+      - domain
+      - apperrors
+      - core
+
+  config:
+    mayDependOn:
+      - config
+      - infrastructure
+      - service
+      - api
+      - core
+      - handler
+      - generated
+      - repository
+      - webserver
+
+  webserver:
+    mayDependOn:
+      - handler
+      - middleware
+      - config
+      - service
+      - api
+      - repository
+      - generated
+      - infrastructure
+      - core
+
+  worker:
+    mayDependOn:
+      - middleware
+      - config
+
+  middleware:
+    mayDependOn:
+      - infrastructure
+      - core
+      - apperrors
+      - config
+      - handler
+
+  repository:
+    mayDependOn:
+      - domain
+      - apperrors
+      - db
+      - service
+
+  generated:
+    mayDependOn:
+      - domain
+      - handler
+
+  db:
+    mayDependOn:
+      - repository
+
+  core:
+    mayDependOn:
+      - domain
+      - apperrors
+
+  cmd:
+    mayDependOn:
+      - config
+      - webserver
+      - worker
+      - generated

@@ -15,7 +15,11 @@ func main() {
 		os.Exit(1)
 	}
 	w := worker.NewWorker(a)
-	defer a.Queue().Client.Close()
+	defer func() {
+		if closeErr := a.Queue().Client.Close(); closeErr != nil {
+			slog.Default().Error("failed to close queue client", "error", closeErr)
+		}
+	}()
 
 	w.Start()
 }

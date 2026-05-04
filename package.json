@@ -1,0 +1,21 @@
+{
+  "name": "@noueii/pi-harness-go-backend",
+  "version": "1.0.0",
+  "description": "Pi harness for no-frame-works Go backend architecture",
+  "keywords": ["pi-package", "pi-harness", "go-backend", "architecture"],
+  "pi": {
+    "extensions": ["./.pi/extensions/harness.ts"],
+    "skills": ["./.pi/skills/harness-review"],
+    "prompts": ["./.pi/prompts/review.md"],
+    "themes": []
+  },
+  "files": [
+    ".pi/extensions/",
+    ".pi/skills/",
+    ".pi/prompts/",
+    ".pi/harness/"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": ">=1.0.0"
+  }
+}

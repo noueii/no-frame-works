@@ -2,21 +2,36 @@ package handler
 
 import (
 	"context"
-	"errors"
+	"log/slog"
+
+	"github.com/go-errors/errors"
 
 	"github.com/noueii/no-frame-works/generated/oapi"
-	"github.com/noueii/no-frame-works/internal/modules/post"
+	"github.com/noueii/no-frame-works/internal/app/core/apperrors"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 )
 
 // GetPost handles GET /posts/{id}.
-func (h *Handler) GetPost(ctx context.Context, request oapi.GetPostRequestObject) (oapi.GetPostResponseObject, error) {
-	result, err := h.postAPI.GetPost(ctx, post.GetPostRequest{
-		ID: request.Id.String(),
+func (h *Handler) GetPost(
+	ctx context.Context,
+	request oapi.GetPostRequestObject,
+) (oapi.GetPostResponseObject, error) {
+	result, err := h.app.API().Posts.GetPost(ctx, &api.GetPostOp{
+		Request: api.GetPostRequest{ID: request.Id.String()},
 	})
 	if err != nil {
-		if errors.Is(err, post.ErrPostNotFound) {
-			return oapi.GetPost404JSONResponse{ErrorJSONResponse: oapi.ErrorJSONResponse{Error: "post not found"}}, nil
+		if errors.Is(err, apperrors.ErrNotFound) {
+			return oapi.GetPost404JSONResponse{
+				ErrorJSONResponse: oapi.ErrorJSONResponse{
+					Error: apperrors.Message(err, "post not found"),
+				},
+			}, nil
 		}
+		h.app.Logger().ErrorContext(ctx, "get post failed",
+			slog.String("post_id", request.Id.String()),
+			slog.String("error_code", apperrors.CodeOf(err)),
+			slog.Any("error", err),
+		)
 		return nil, err
 	}
 

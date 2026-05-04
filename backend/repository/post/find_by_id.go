@@ -6,17 +6,17 @@ import (
 	"errors"
 	"fmt"
 
-	. "github.com/go-jet/jet/v2/postgres"
+	jetpostgres "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
-	"github.com/noueii/no-frame-works/internal/modules/post/domain"
+	"github.com/noueii/no-frame-works/internal/app/domain"
 )
 
 func (r *PostgresPostRepository) FindByID(ctx context.Context, id string) (*domain.Post, error) {
-	stmt := SELECT(table.Post.AllColumns).
+	stmt := jetpostgres.SELECT(table.Post.AllColumns).
 		FROM(table.Post).
-		WHERE(table.Post.ID.EQ(String(id)))
+		WHERE(table.Post.ID.EQ(jetpostgres.String(id)))
 
 	var dest model.Post
 	err := stmt.QueryContext(ctx, r.db, &dest)

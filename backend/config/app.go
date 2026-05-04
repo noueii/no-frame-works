@@ -14,7 +14,8 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/noueii/no-frame-works/config/provider"
-	"github.com/noueii/no-frame-works/internal/infrastructure/identity"
+	"github.com/noueii/no-frame-works/internal/app/infrastructure/identity"
+	"github.com/noueii/no-frame-works/internal/app/services/api"
 )
 
 type App struct {
@@ -26,7 +27,23 @@ type App struct {
 	queue          *provider.AsynqProvider
 	sentry         *sentryhttp.Handler
 	identityClient identity.Client
+
+	api *API // cross-module service APIs
 }
+
+// API aggregates all service APIs under one accessor.
+//
+// Access pattern: app.API().Posts.CreatePost(...), app.API().Users.GetUser(...)
+type API struct {
+	Posts api.PostAPI
+	Users api.UserAPI
+}
+
+func (app *App) API() *API { return app.api }
+
+// RegisterAPI installs the service APIs. Called once at startup by
+// webserver.wireModules.
+func (app *App) RegisterAPI(api *API) { app.api = api }
 
 func NewApp() (*App, error) {
 	app := App{}

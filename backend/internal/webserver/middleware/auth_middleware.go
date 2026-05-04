@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/noueii/no-frame-works/internal/core/actor"
-	"github.com/noueii/no-frame-works/internal/infrastructure/identity"
+	"github.com/noueii/no-frame-works/internal/app/core/actor"
+	"github.com/noueii/no-frame-works/internal/app/infrastructure/identity"
 )
 
 // NewActorMiddleware creates a middleware that validates the session via the

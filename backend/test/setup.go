@@ -1,27 +1,11 @@
 package test
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/noueii/no-frame-works/config"
 	"github.com/noueii/no-frame-works/config/provider"
 )
-
-type fakeHTTPServer interface {
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
-}
-
-type fakeHTTPClient struct {
-	server fakeHTTPServer
-}
-
-func (c *fakeHTTPClient) Do(r *http.Request) (*http.Response, error) {
-	rr := httptest.NewRecorder()
-	c.server.ServeHTTP(rr, r)
-	return rr.Result(), nil
-}
 
 func init() { //nolint:gochecknoinits // ignore for tests
 	provider.RegisterTestTxDB()

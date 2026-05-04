@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	. "github.com/go-jet/jet/v2/postgres"
+	jetpostgres "github.com/go-jet/jet/v2/postgres"
 
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/model"
 	"github.com/noueii/no-frame-works/db/no_frame_works/public/table"
-	"github.com/noueii/no-frame-works/internal/modules/post/domain"
+	"github.com/noueii/no-frame-works/internal/app/domain"
 )
 
 func (r *PostgresPostRepository) ListAll(ctx context.Context) ([]domain.Post, error) {
-	stmt := SELECT(table.Post.AllColumns).
+	stmt := jetpostgres.SELECT(table.Post.AllColumns).
 		FROM(table.Post).
 		ORDER_BY(table.Post.CreatedAt.DESC())
 
