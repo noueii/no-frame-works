@@ -2,6 +2,7 @@ tmp
 .env
 .env.local
 .env.test
+docker-compose.agent.yml
 .swp
 __debug_bin
 coverage.out

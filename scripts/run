@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Agent run script. Run from inside a git worktree.
+# Ensures docker is running, then starts webserver + worker.
+
+command -v jq >/dev/null 2>&1 || { echo "Error: jq is required"; exit 1; }
+command -v docker >/dev/null 2>&1 || { echo "Error: docker is required"; exit 1; }
+
+WORKTREE=$(git rev-parse --show-toplevel)
+GIT_COMMON_DIR=$(git rev-parse --git-common-dir)
+
+if [[ "$GIT_COMMON_DIR" == /* ]]; then
+    MAIN_REPO=$(dirname "$GIT_COMMON_DIR")
+else
+    MAIN_REPO="$WORKTREE"
+fi
+
+if [[ "$WORKTREE" == "$MAIN_REPO" ]]; then
+    echo "Error: This script is for worktrees."
+    exit 1
+fi
+
+REGISTRY="$MAIN_REPO/.agents/registry.json"
+
+if [[ ! -f "$REGISTRY" ]]; then
+    echo "Error: Registry not found. Run setup first."
+    exit 1
+fi
+
+ID=$(jq -r --arg wt "$WORKTREE" '.agents | to_entries[] | select(.value.worktree == $wt) | .key' "$REGISTRY" | head -n1 || true)
+
+if [[ -z "$ID" ]]; then
+    echo "Error: Worktree not registered. Run setup first."
+    exit 1
+fi
+
+cd "$WORKTREE/backend"
+
+echo "Ensuring docker is running for agent $ID..."
+docker compose -f docker-compose.yml -f docker-compose.agent.yml up -d
+
+echo "Starting server and worker (Ctrl+C to stop)..."
+set -a; source .env.local; set +a
+trap 'kill 0' EXIT
+go run ./cmd/webserver & go run ./cmd/worker &
+wait

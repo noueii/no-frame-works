@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Agent teardown script. Run from inside a git worktree.
+# Stops docker stack, removes env files, deregisters from registry.
+
+command -v jq >/dev/null 2>&1 || { echo "Error: jq is required"; exit 1; }
+
+WORKTREE=$(git rev-parse --show-toplevel)
+GIT_COMMON_DIR=$(git rev-parse --git-common-dir)
+
+if [[ "$GIT_COMMON_DIR" == /* ]]; then
+    MAIN_REPO=$(dirname "$GIT_COMMON_DIR")
+else
+    MAIN_REPO="$WORKTREE"
+fi
+
+if [[ "$WORKTREE" == "$MAIN_REPO" ]]; then
+    echo "Error: This script is for worktrees."
+    exit 1
+fi
+
+REGISTRY="$MAIN_REPO/.agents/registry.json"
+LOCK="$MAIN_REPO/.agents/registry.lock"
+
+if [[ ! -f "$REGISTRY" ]]; then
+    echo "Registry not found, nothing to teardown."
+    exit 0
+fi
+
+ID=$(jq -r --arg wt "$WORKTREE" '.agents | to_entries[] | select(.value.worktree == $wt) | .key' "$REGISTRY" | head -n1 || true)
+
+if [[ -z "$ID" ]]; then
+    echo "Worktree not registered, nothing to teardown."
+    exit 0
+fi
+
+cd "$WORKTREE/backend"
+
+echo "Stopping docker for agent $ID..."
+docker compose -f docker-compose.yml -f docker-compose.agent.yml down -v || true
+
+# Remove env files
+rm -f "$WORKTREE/backend/.env" "$WORKTREE/backend/.env.local" "$WORKTREE/backend/.env.test" "$WORKTREE/backend/docker-compose.agent.yml"
+
+# Remove from registry
+exec 200>"$LOCK"
+flock -x 200 || { echo "Error: Could not acquire registry lock"; exit 1; }
+
+# Re-read registry in case it changed
+if [[ -f "$REGISTRY" ]]; then
+    jq --arg id "$ID" 'del(.agents[$id])' "$REGISTRY" > "$REGISTRY.tmp" && mv "$REGISTRY.tmp" "$REGISTRY"
+    echo "Removed agent $ID from registry"
+fi
+
+flock -u 200
+
+echo "Teardown complete."
