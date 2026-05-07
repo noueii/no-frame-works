@@ -1,0 +1,26 @@
+name: ${AGENT_NAME}
+
+services:
+  db:
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - ${DB_VOLUME}:/var/lib/postgresql/data
+      - ./scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+
+  redis:
+    ports:
+      - "${REDIS_PORT}:6379"
+
+  kratos:
+    ports:
+      - "${KRATOS_PUBLIC}:4433"
+      - "${KRATOS_ADMIN}:4434"
+
+  mailslurper:
+    ports:
+      - "${MAIL_WEB}:4436"
+      - "${MAIL_SMTP}:4437"
+
+volumes:
+  ${DB_VOLUME}:
