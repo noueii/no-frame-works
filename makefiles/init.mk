@@ -41,6 +41,41 @@ init-env: ## Initialize .env files
 	@echo ".env Initialization Complete "
 	@echo
 
+.PHONY: wt-config
+wt-config: ## Bootstrap a worktree: copy env files from the main worktree + install dependencies
+	@MAIN_WORKTREE=$$(git worktree list --porcelain | head -1 | sed 's/worktree //'); \
+	CURRENT_DIR=$$(pwd); \
+	if [ "$$MAIN_WORKTREE" = "$$CURRENT_DIR" ]; then \
+		echo "Not in a worktree. Nothing to do."; \
+		exit 0; \
+	fi; \
+	echo "------------------------------"; \
+	echo "Bootstrapping worktree"; \
+	echo; \
+	echo ">> [1/3] Copying env files from: $$MAIN_WORKTREE"; \
+	echo; \
+	for ENV_FILE in .env .env.local .env.test; do \
+		echo "--- [Server] $$ENV_FILE ---"; \
+		if [ -f "$(SERVER_DIR)/$$ENV_FILE" ]; then \
+			echo "✓ $(SERVER_DIR)/$$ENV_FILE already exists. Skipping."; \
+		elif [ -f "$$MAIN_WORKTREE/$(SERVER_DIR)/$$ENV_FILE" ]; then \
+			cp "$$MAIN_WORKTREE/$(SERVER_DIR)/$$ENV_FILE" "$(SERVER_DIR)/$$ENV_FILE" && \
+			echo "✓ Copied $(SERVER_DIR)/$$ENV_FILE from main worktree."; \
+		else \
+			echo "⚠ $(SERVER_DIR)/$$ENV_FILE not found in main worktree. Skipping."; \
+		fi; \
+		echo; \
+	done
+	@echo ">> [2/3] Installing backend dependencies..."
+	@cd $(SERVER_DIR) && go mod download
+	@echo "✓ Backend dependencies installed."
+	@echo
+	@echo ">> [3/3] Installing frontend dependencies..."
+	@cd $(CLIENT_DIR) && bun install
+	@echo "✓ Frontend dependencies installed."
+	@echo
+	@echo "Worktree bootstrap complete!"
+
 .PHONY: init-db
 init-db: ## Initializes postgres in docker and runs existing migrations
 	@echo
