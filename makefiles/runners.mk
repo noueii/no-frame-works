@@ -1,5 +1,17 @@
 ##@ Runners - Helpers to run server components
 
+.PHONY: dev
+dev: ## Start everything for local development: docker + webserver + worker + frontend
+	@echo ">> Starting docker environment..."
+	@(cd $(SERVER_DIR) && docker-compose up -d)
+	@echo ">> Starting webserver, worker, and frontend (Ctrl+C to stop)..."
+	@set -o allexport; source $(SERVER_DIR)/.env.local; set +o allexport; \
+	trap 'kill 0' EXIT; \
+	( cd $(SERVER_DIR) && go run ./cmd/webserver ) & \
+	( cd $(SERVER_DIR) && go run ./cmd/worker ) & \
+	( cd $(CLIENT_DIR) && bun run dev ) & \
+	wait
+
 .PHONY: run-docker
 run-docker: ## Runs the docker environment
 	@cd $(SERVER_DIR) && docker-compose up -d
