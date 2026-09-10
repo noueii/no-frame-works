@@ -2,3 +2,6 @@
 .agents/registry.json
 .agents/registry.lock
 
+# Agent harness runtime state
+.omo/
+
